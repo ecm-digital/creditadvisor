@@ -41,6 +41,9 @@ export const Header: React.FC = () => {
                         <Link to="/dashboard" className="header__link header__link--accent">
                             Panel Doradcy
                         </Link>
+                        <Link to="/client-portal" className="header__link header__link--accent">
+                            Panel Klienta
+                        </Link>
                         <Link to="/login" className="header__link">Zaloguj się</Link>
                         <Button variant="primary" size="sm">
                             Bezpłatna konsultacja
@@ -70,6 +73,9 @@ export const Header: React.FC = () => {
                 <div className="header__mobile-actions">
                     <Link to="/dashboard" onClick={() => setIsMenuOpen(false)}>
                         <Button variant="outline" size="lg" fullWidth>Panel Doradcy</Button>
+                    </Link>
+                    <Link to="/client-portal" onClick={() => setIsMenuOpen(false)}>
+                        <Button variant="outline" size="lg" fullWidth>Panel Klienta</Button>
                     </Link>
                     <Button variant="outline" size="lg" fullWidth>Zaloguj się</Button>
                     <Button variant="primary" size="lg" fullWidth>Bezpłatna konsultacja</Button>
