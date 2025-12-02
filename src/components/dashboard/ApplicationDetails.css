@@ -1,0 +1,144 @@
+.app-details-container {
+  max-width: 1000px;
+  margin: 0 auto;
+}
+
+.details-header {
+  display: flex;
+  justify-content: space-between;
+  align-items: flex-start;
+  margin-bottom: 28px;
+  flex-wrap: wrap;
+  gap: 16px;
+}
+
+.header-left {
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+}
+
+.back-link {
+  font-size: 14px;
+  font-weight: 500;
+  color: var(--gray-500);
+}
+
+.back-link:hover {
+  color: var(--primary);
+}
+
+.details-title {
+  font-size: 26px;
+  font-weight: 800;
+  color: var(--gray-900);
+  display: flex;
+  align-items: center;
+  gap: 14px;
+}
+
+.status-tag {
+  font-size: 12px;
+  padding: 6px 14px;
+  border-radius: var(--radius-full);
+  font-weight: 600;
+  background: var(--primary-bg);
+  color: var(--primary);
+}
+
+.header-actions {
+  display: flex;
+  gap: 10px;
+}
+
+.details-grid {
+  display: grid;
+  grid-template-columns: 1fr;
+  gap: 20px;
+}
+
+@media (min-width: 768px) {
+  .details-grid {
+    grid-template-columns: 1fr 1fr;
+  }
+}
+
+.details-card {
+  background: white;
+  border: 1px solid var(--gray-200);
+  border-radius: var(--radius-md);
+  padding: 24px;
+}
+
+.details-card.full-width {
+  grid-column: 1 / -1;
+}
+
+.card-title {
+  font-size: 16px;
+  font-weight: 700;
+  color: var(--gray-900);
+  margin-bottom: 20px;
+  padding-bottom: 14px;
+  border-bottom: 1px solid var(--gray-200);
+}
+
+.info-row {
+  display: flex;
+  justify-content: space-between;
+  padding: 12px 0;
+  border-bottom: 1px solid var(--gray-100);
+}
+
+.info-row:last-child {
+  border-bottom: none;
+}
+
+.info-row .label {
+  font-size: 14px;
+  color: var(--gray-500);
+}
+
+.info-row .value {
+  font-size: 14px;
+  font-weight: 600;
+  color: var(--gray-900);
+}
+
+.documents-list {
+  display: flex;
+  flex-direction: column;
+  gap: 12px;
+}
+
+.document-item {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  padding: 14px;
+  background: var(--gray-50);
+  border-radius: var(--radius);
+}
+
+.doc-name {
+  font-size: 14px;
+  font-weight: 600;
+  color: var(--gray-800);
+}
+
+.doc-status {
+  font-size: 12px;
+  font-weight: 600;
+}
+
+.status-approved {
+  color: var(--success);
+}
+
+.status-pending {
+  color: var(--warning);
+}
+
+.status-missing {
+  color: var(--error);
+}

@@ -1,0 +1,140 @@
+.testimonials {
+  padding: 100px 0;
+  background: var(--gray-50);
+}
+
+.testimonials__header {
+  text-align: center;
+  max-width: 600px;
+  margin: 0 auto 64px;
+}
+
+.testimonials__label {
+  display: inline-block;
+  padding: 8px 16px;
+  background: var(--warning);
+  color: white;
+  font-size: 13px;
+  font-weight: 700;
+  text-transform: uppercase;
+  letter-spacing: 0.05em;
+  border-radius: var(--radius-full);
+  margin-bottom: 20px;
+}
+
+.testimonials__title {
+  font-size: clamp(28px, 4vw, 40px);
+  font-weight: 800;
+  color: var(--gray-900);
+  margin-bottom: 16px;
+}
+
+.testimonials__subtitle {
+  font-size: 17px;
+  color: var(--gray-600);
+  line-height: 1.7;
+}
+
+.testimonials__grid {
+  display: grid;
+  grid-template-columns: 1fr;
+  gap: 24px;
+  margin-bottom: 64px;
+}
+
+@media (min-width: 640px) {
+  .testimonials__grid {
+    grid-template-columns: repeat(2, 1fr);
+  }
+}
+
+@media (min-width: 1024px) {
+  .testimonials__grid {
+    grid-template-columns: repeat(3, 1fr);
+  }
+}
+
+.testimonial-card {
+  background: white;
+  border: 1px solid var(--gray-200);
+  border-radius: var(--radius-lg);
+  padding: 28px;
+  transition: all 0.3s ease;
+}
+
+.testimonial-card:hover {
+  box-shadow: var(--shadow-lg);
+  transform: translateY(-2px);
+}
+
+.testimonial-card__stars {
+  color: var(--warning);
+  font-size: 18px;
+  letter-spacing: 2px;
+  margin-bottom: 16px;
+}
+
+.testimonial-card__content {
+  font-size: 16px;
+  line-height: 1.7;
+  color: var(--gray-700);
+  margin-bottom: 24px;
+}
+
+.testimonial-card__author {
+  display: flex;
+  align-items: center;
+  gap: 14px;
+  padding-top: 20px;
+  border-top: 1px solid var(--gray-100);
+}
+
+.testimonial-card__avatar {
+  width: 48px;
+  height: 48px;
+  background: var(--primary);
+  color: white;
+  border-radius: 50%;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  font-size: 15px;
+  font-weight: 700;
+}
+
+.testimonial-card__name {
+  font-size: 16px;
+  font-weight: 700;
+  color: var(--gray-900);
+}
+
+.testimonial-card__role {
+  font-size: 14px;
+  color: var(--gray-500);
+}
+
+/* Trust badges */
+.testimonials__trust {
+  display: flex;
+  flex-wrap: wrap;
+  justify-content: center;
+  gap: 40px;
+  padding-top: 40px;
+  border-top: 1px solid var(--gray-200);
+}
+
+.trust-item {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+}
+
+.trust-item__icon {
+  font-size: 24px;
+}
+
+.trust-item__text {
+  font-size: 15px;
+  font-weight: 600;
+  color: var(--gray-700);
+}
