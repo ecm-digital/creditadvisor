@@ -71,25 +71,29 @@
   background: var(--primary-bg);
 }
 
+/* Accent Link (Panel Doradcy) */
+.header__link--accent {
+  color: var(--primary);
+  font-weight: 600;
+  background: rgba(37, 99, 235, 0.05);
+}
+
+.header__link--accent:hover {
+  background: rgba(37, 99, 235, 0.1);
+  color: var(--primary-dark);
+}
+
 /* Actions */
 .header__actions {
   display: none;
   align-items: center;
-  gap: 16px;
+  gap: 12px;
 }
 
 @media (min-width: 1024px) {
   .header__actions {
     display: flex;
   }
-}
-
-.header__actions .header__link {
-  color: var(--gray-600);
-}
-
-.header__actions .header__link:hover {
-  color: var(--primary);
 }
 
 /* Mobile button */
@@ -177,6 +181,12 @@
   display: flex;
   flex-direction: column;
   gap: 12px;
+}
+
+/* Mobile link styling */
+.header__mobile-actions a {
+  text-decoration: none;
+  width: 100%;
 }
 
 @media (min-width: 1024px) {
