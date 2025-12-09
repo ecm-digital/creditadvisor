@@ -1,8 +1,10 @@
 import React, { useState, useEffect } from 'react';
 import { Button } from '../ui/Button';
+import { ConsultationModal } from '../landing/ConsultationModal';
 import './CreditCalculator.css';
 
 export const CreditCalculator: React.FC = () => {
+    const [isConsultationModalOpen, setIsConsultationModalOpen] = useState(false);
     const [income, setIncome] = useState(8000);
     const [expenses, setExpenses] = useState(2500);
     const [period, setPeriod] = useState(25);
@@ -28,6 +30,10 @@ export const CreditCalculator: React.FC = () => {
 
     return (
         <section id="calculator" className="calculator">
+            <ConsultationModal 
+                isOpen={isConsultationModalOpen} 
+                onClose={() => setIsConsultationModalOpen(false)} 
+            />
             <div className="container">
                 <div className="calculator__header">
                     <span className="calculator__label">Kalkulator</span>
@@ -102,7 +108,12 @@ export const CreditCalculator: React.FC = () => {
                         <p className="calculator__result-note">
                             * Kalkulacja ma charakter poglądowy. Ostateczna kwota zależy od indywidualnej oceny banku.
                         </p>
-                        <Button variant="primary" size="lg" fullWidth>
+                        <Button 
+                            variant="primary" 
+                            size="lg" 
+                            fullWidth
+                            onClick={() => setIsConsultationModalOpen(true)}
+                        >
                             Uzyskaj dokładną wycenę
                         </Button>
                     </div>

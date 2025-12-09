@@ -1,10 +1,24 @@
-import React from 'react';
+import React, { useState } from 'react';
 import { Button } from '../ui/Button';
+import { ConsultationModal } from './ConsultationModal';
 import './Hero.css';
 
 export const Hero: React.FC = () => {
+    const [isConsultationModalOpen, setIsConsultationModalOpen] = useState(false);
+
+    const scrollToCalculator = () => {
+        const calculatorSection = document.getElementById('calculator');
+        if (calculatorSection) {
+            calculatorSection.scrollIntoView({ behavior: 'smooth', block: 'start' });
+        }
+    };
+
     return (
         <section className="hero">
+            <ConsultationModal 
+                isOpen={isConsultationModalOpen} 
+                onClose={() => setIsConsultationModalOpen(false)} 
+            />
             <div className="hero__bg">
                 <div className="hero__gradient"></div>
                 <div className="hero__pattern"></div>
@@ -29,10 +43,10 @@ export const Hero: React.FC = () => {
                         </p>
                         
                         <div className="hero__buttons">
-                            <Button variant="primary" size="lg">
+                            <Button variant="primary" size="lg" onClick={scrollToCalculator}>
                                 Sprawdź zdolność kredytową
                             </Button>
-                            <Button variant="outline" size="lg">
+                            <Button variant="outline" size="lg" onClick={() => setIsConsultationModalOpen(true)}>
                                 Umów rozmowę
                             </Button>
                         </div>

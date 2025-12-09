@@ -1,0 +1,143 @@
+.consultation-modal-overlay {
+  position: fixed;
+  inset: 0;
+  background: rgba(0, 0, 0, 0.5);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  z-index: 2000;
+  padding: 20px;
+}
+
+.consultation-modal {
+  background: white;
+  border-radius: var(--radius-lg);
+  width: 100%;
+  max-width: 600px;
+  max-height: 90vh;
+  box-shadow: var(--shadow-xl);
+  overflow: hidden;
+  display: flex;
+  flex-direction: column;
+}
+
+.consultation-modal-header {
+  padding: 24px;
+  border-bottom: 1px solid var(--gray-200);
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+}
+
+.consultation-modal-title {
+  font-size: 24px;
+  font-weight: 700;
+  color: var(--gray-900);
+  margin: 0;
+}
+
+.consultation-modal-close {
+  background: none;
+  border: none;
+  font-size: 28px;
+  color: var(--gray-500);
+  cursor: pointer;
+  padding: 4px;
+  line-height: 1;
+  transition: color 0.2s;
+}
+
+.consultation-modal-close:hover {
+  color: var(--gray-900);
+}
+
+.consultation-modal-close:disabled {
+  opacity: 0.5;
+  cursor: not-allowed;
+}
+
+.consultation-modal-body {
+  padding: 24px;
+  overflow-y: auto;
+  flex: 1;
+}
+
+.consultation-form-row {
+  display: grid;
+  grid-template-columns: 1fr;
+  gap: 16px;
+  margin-bottom: 16px;
+}
+
+@media (min-width: 640px) {
+  .consultation-form-row {
+    grid-template-columns: 1fr 1fr;
+  }
+}
+
+.consultation-form-field {
+  margin-bottom: 16px;
+}
+
+.consultation-form-field:last-of-type {
+  margin-bottom: 0;
+}
+
+.consultation-form-field label {
+  display: block;
+  font-size: 14px;
+  font-weight: 600;
+  color: var(--gray-700);
+  margin-bottom: 8px;
+}
+
+.consultation-form-field input,
+.consultation-form-field select,
+.consultation-form-field textarea {
+  width: 100%;
+  padding: 12px;
+  border: 2px solid var(--gray-200);
+  border-radius: var(--radius);
+  font-family: inherit;
+  font-size: 14px;
+  color: var(--gray-900);
+  background: white;
+  transition: border-color 0.2s;
+}
+
+.consultation-form-field input:focus,
+.consultation-form-field select:focus,
+.consultation-form-field textarea:focus {
+  outline: none;
+  border-color: var(--primary);
+}
+
+.consultation-form-field input:disabled,
+.consultation-form-field select:disabled,
+.consultation-form-field textarea:disabled {
+  background: var(--gray-50);
+  cursor: not-allowed;
+}
+
+.consultation-form-field textarea {
+  resize: vertical;
+  min-height: 100px;
+}
+
+.consultation-modal-footer {
+  display: flex;
+  justify-content: flex-end;
+  gap: 12px;
+  margin-top: 24px;
+  padding-top: 24px;
+  border-top: 1px solid var(--gray-200);
+}
+
+.consultation-disclaimer {
+  font-size: 12px;
+  color: var(--gray-500);
+  margin-top: 16px;
+  text-align: center;
+  line-height: 1.5;
+}
+

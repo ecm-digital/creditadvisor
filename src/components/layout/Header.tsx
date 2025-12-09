@@ -1,11 +1,14 @@
 import React, { useState, useEffect } from 'react';
-import { Link } from 'react-router-dom';
+import { Link, useLocation } from 'react-router-dom';
 import { Button } from '../ui/Button';
+import { ConsultationModal } from '../landing/ConsultationModal';
 import './Header.css';
 
 export const Header: React.FC = () => {
     const [isScrolled, setIsScrolled] = useState(false);
     const [isMenuOpen, setIsMenuOpen] = useState(false);
+    const [isConsultationModalOpen, setIsConsultationModalOpen] = useState(false);
+    const location = useLocation();
 
     useEffect(() => {
         const handleScroll = () => {
@@ -15,8 +18,17 @@ export const Header: React.FC = () => {
         return () => window.removeEventListener('scroll', handleScroll);
     }, []);
 
+    // Pokaż modal tylko na stronie głównej
+    const showModalOnThisPage = location.pathname === '/';
+
     return (
         <header className={`header ${isScrolled ? 'header--scrolled' : ''}`}>
+            {showModalOnThisPage && (
+                <ConsultationModal 
+                    isOpen={isConsultationModalOpen} 
+                    onClose={() => setIsConsultationModalOpen(false)} 
+                />
+            )}
             <div className="container">
                 <div className="header__inner">
                     <Link to="/" className="header__logo">
@@ -31,10 +43,6 @@ export const Header: React.FC = () => {
                     </Link>
 
                     <nav className="header__nav">
-                        <a href="#features" className="header__link">Usługi</a>
-                        <a href="#calculator" className="header__link">Kalkulator</a>
-                        <a href="#testimonials" className="header__link">Opinie</a>
-                        <a href="#contact" className="header__link">Kontakt</a>
                     </nav>
 
                     <div className="header__actions">
@@ -44,8 +52,17 @@ export const Header: React.FC = () => {
                         <Link to="/client-portal" className="header__link header__link--accent">
                             Panel Klienta
                         </Link>
-                        <Link to="/login" className="header__link">Zaloguj się</Link>
-                        <Button variant="primary" size="sm">
+                        <Button 
+                            variant="primary" 
+                            size="sm"
+                            onClick={() => {
+                                if (showModalOnThisPage) {
+                                    setIsConsultationModalOpen(true);
+                                } else {
+                                    window.location.href = '/#contact';
+                                }
+                            }}
+                        >
                             Bezpłatna konsultacja
                         </Button>
                     </div>
@@ -65,10 +82,6 @@ export const Header: React.FC = () => {
             {/* Mobile menu */}
             <div className={`header__mobile-menu ${isMenuOpen ? 'active' : ''}`}>
                 <nav className="header__mobile-nav">
-                    <a href="#features" onClick={() => setIsMenuOpen(false)}>Usługi</a>
-                    <a href="#calculator" onClick={() => setIsMenuOpen(false)}>Kalkulator</a>
-                    <a href="#testimonials" onClick={() => setIsMenuOpen(false)}>Opinie</a>
-                    <a href="#contact" onClick={() => setIsMenuOpen(false)}>Kontakt</a>
                 </nav>
                 <div className="header__mobile-actions">
                     <Link to="/dashboard" onClick={() => setIsMenuOpen(false)}>
@@ -77,8 +90,21 @@ export const Header: React.FC = () => {
                     <Link to="/client-portal" onClick={() => setIsMenuOpen(false)}>
                         <Button variant="outline" size="lg" fullWidth>Panel Klienta</Button>
                     </Link>
-                    <Button variant="outline" size="lg" fullWidth>Zaloguj się</Button>
-                    <Button variant="primary" size="lg" fullWidth>Bezpłatna konsultacja</Button>
+                    <Button 
+                        variant="primary" 
+                        size="lg" 
+                        fullWidth
+                        onClick={() => {
+                            setIsMenuOpen(false);
+                            if (showModalOnThisPage) {
+                                setIsConsultationModalOpen(true);
+                            } else {
+                                window.location.href = '/#contact';
+                            }
+                        }}
+                    >
+                        Bezpłatna konsultacja
+                    </Button>
                 </div>
             </div>
         </header>

@@ -20,6 +20,7 @@ export const DashboardLayout: React.FC<DashboardLayoutProps> = ({ children }) =>
                     <Link to="/dashboard/settings" className="sidebar-link">Ustawienia</Link>
                 </nav>
                 <div className="sidebar-footer">
+                    <Link to="/" className="sidebar-link">Wróć na stronę internetową</Link>
                     <Link to="/" className="sidebar-link logout">Wyloguj</Link>
                 </div>
             </aside>
@@ -27,8 +28,8 @@ export const DashboardLayout: React.FC<DashboardLayoutProps> = ({ children }) =>
                 <header className="dashboard-header">
                     <h1 className="page-title">Panel Doradcy</h1>
                     <div className="user-profile">
-                        <span className="user-name">Jan Kowalski</span>
-                        <div className="user-avatar">JK</div>
+                        <span className="user-name">Tomasz Blachliński</span>
+                        <div className="user-avatar">TB</div>
                     </div>
                 </header>
                 <div className="dashboard-content">
