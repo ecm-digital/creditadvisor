@@ -1,0 +1,121 @@
+.process {
+    padding: 100px 0;
+    background-color: white;
+}
+
+.process__header {
+    text-align: center;
+    margin-bottom: 80px;
+}
+
+.process__label {
+    display: inline-block;
+    padding: 6px 16px;
+    background: var(--primary-fade);
+    color: var(--primary);
+    border-radius: var(--radius-full);
+    font-size: 14px;
+    font-weight: 600;
+    margin-bottom: 16px;
+}
+
+.process__title {
+    font-size: 42px;
+    font-weight: 800;
+    color: var(--gray-900);
+    margin-bottom: 20px;
+}
+
+.process__subtitle {
+    font-size: 20px;
+    color: var(--gray-600);
+    max-width: 600px;
+    margin: 0 auto;
+}
+
+.process__grid {
+    display: grid;
+    grid-template-columns: repeat(3, 1fr);
+    gap: 40px;
+    position: relative;
+}
+
+@media (max-width: 1024px) {
+    .process__grid {
+        grid-template-columns: 1fr;
+        gap: 60px;
+    }
+}
+
+.process-step {
+    position: relative;
+    background: var(--gray-50);
+    padding: 40px;
+    border-radius: var(--radius-lg);
+    transition: transform 0.3s, box-shadow 0.3s;
+}
+
+.process-step:hover {
+    transform: translateY(-5px);
+    box-shadow: var(--shadow-xl);
+    background: white;
+}
+
+.process-step__header {
+    display: flex;
+    justify-content: space-between;
+    align-items: flex-start;
+    margin-bottom: 24px;
+}
+
+.process-step__number {
+    font-size: 48px;
+    font-weight: 900;
+    color: var(--primary);
+    opacity: 0.2;
+    line-height: 1;
+}
+
+.process-step__icon {
+    font-size: 32px;
+    background: white;
+    width: 64px;
+    height: 64px;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    border-radius: var(--radius-md);
+    box-shadow: var(--shadow-md);
+}
+
+.process-step__title {
+    font-size: 22px;
+    font-weight: 700;
+    color: var(--gray-900);
+    margin-bottom: 16px;
+}
+
+.process-step__description {
+    font-size: 16px;
+    color: var(--gray-600);
+    line-height: 1.6;
+}
+
+.process-step__arrow {
+    position: absolute;
+    top: 50%;
+    right: -40px;
+    transform: translateY(-50%);
+    width: 40px;
+    color: var(--primary);
+    opacity: 0.3;
+}
+
+@media (max-width: 1024px) {
+    .process-step__arrow {
+        top: auto;
+        bottom: -50px;
+        right: 50%;
+        transform: translateX(50%) rotate(90deg);
+    }
+}

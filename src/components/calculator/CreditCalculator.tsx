@@ -5,6 +5,7 @@ import './CreditCalculator.css';
 
 export const CreditCalculator: React.FC = () => {
     const [isConsultationModalOpen, setIsConsultationModalOpen] = useState(false);
+    const [loanType, setLoanType] = useState<'mortgage' | 'cash'>('mortgage');
     const [income, setIncome] = useState(8000);
     const [expenses, setExpenses] = useState(2500);
     const [period, setPeriod] = useState(25);
@@ -14,15 +15,26 @@ export const CreditCalculator: React.FC = () => {
     useEffect(() => {
         const netIncome = income - expenses;
         const maxInstallment = netIncome * 0.5;
-        const interestRate = 0.075;
+
+        // Base interest rates
+        const interestRate = loanType === 'mortgage' ? 0.075 : 0.115;
         const monthlyRate = interestRate / 12;
         const months = period * 12;
 
         const maxLoan = maxInstallment * (1 - Math.pow(1 + monthlyRate, -months)) / monthlyRate;
-        
+
         setCapacity(Math.max(0, Math.round(maxLoan)));
         setMonthlyPayment(Math.max(0, Math.round(maxInstallment)));
-    }, [income, expenses, period]);
+    }, [income, expenses, period, loanType]);
+
+    useEffect(() => {
+        // Adjust default period when switching loan types
+        if (loanType === 'cash' && period > 10) {
+            setPeriod(8);
+        } else if (loanType === 'mortgage' && period < 10) {
+            setPeriod(25);
+        }
+    }, [loanType]);
 
     const formatMoney = (num: number) => {
         return num.toLocaleString('pl-PL') + ' zł';
@@ -30,9 +42,9 @@ export const CreditCalculator: React.FC = () => {
 
     return (
         <section id="calculator" className="calculator">
-            <ConsultationModal 
-                isOpen={isConsultationModalOpen} 
-                onClose={() => setIsConsultationModalOpen(false)} 
+            <ConsultationModal
+                isOpen={isConsultationModalOpen}
+                onClose={() => setIsConsultationModalOpen(false)}
             />
             <div className="container">
                 <div className="calculator__header">
@@ -44,7 +56,7 @@ export const CreditCalculator: React.FC = () => {
                         Oblicz szacunkową kwotę kredytu, jaką możesz uzyskać
                     </p>
                 </div>
-                
+
                 <div className="calculator__content">
                     <div className="calculator__form">
                         <div className="calculator__field">
@@ -63,7 +75,7 @@ export const CreditCalculator: React.FC = () => {
                                 <span className="calculator__slider-value">{formatMoney(income)}</span>
                             </div>
                         </div>
-                        
+
                         <div className="calculator__field">
                             <label className="calculator__field-label">
                                 Stałe wydatki (miesięcznie)
@@ -80,7 +92,7 @@ export const CreditCalculator: React.FC = () => {
                                 <span className="calculator__slider-value">{formatMoney(expenses)}</span>
                             </div>
                         </div>
-                        
+
                         <div className="calculator__field">
                             <label className="calculator__field-label">
                                 Okres kredytowania (lata)
@@ -98,7 +110,7 @@ export const CreditCalculator: React.FC = () => {
                             </div>
                         </div>
                     </div>
-                    
+
                     <div className="calculator__result">
                         <div className="calculator__result-label">Twoja zdolność kredytowa</div>
                         <div className="calculator__result-value">{formatMoney(capacity)}</div>
@@ -108,9 +120,9 @@ export const CreditCalculator: React.FC = () => {
                         <p className="calculator__result-note">
                             * Kalkulacja ma charakter poglądowy. Ostateczna kwota zależy od indywidualnej oceny banku.
                         </p>
-                        <Button 
-                            variant="primary" 
-                            size="lg" 
+                        <Button
+                            variant="primary"
+                            size="lg"
                             fullWidth
                             onClick={() => setIsConsultationModalOpen(true)}
                         >
