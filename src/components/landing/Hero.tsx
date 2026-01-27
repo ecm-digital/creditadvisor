@@ -13,17 +13,24 @@ export const Hero: React.FC = () => {
         }
     };
 
+    const scrollToEbook = () => {
+        const ebookSection = document.getElementById('ebook');
+        if (ebookSection) {
+            ebookSection.scrollIntoView({ behavior: 'smooth', block: 'start' });
+        }
+    };
+
     return (
         <section className="hero">
-            <ConsultationModal 
-                isOpen={isConsultationModalOpen} 
-                onClose={() => setIsConsultationModalOpen(false)} 
+            <ConsultationModal
+                isOpen={isConsultationModalOpen}
+                onClose={() => setIsConsultationModalOpen(false)}
             />
             <div className="hero__bg">
                 <div className="hero__gradient"></div>
                 <div className="hero__pattern"></div>
             </div>
-            
+
             <div className="container">
                 <div className="hero__content">
                     <div className="hero__text">
@@ -31,26 +38,26 @@ export const Hero: React.FC = () => {
                             <span className="hero__badge-dot"></span>
                             Zaufało nam ponad 500 klientów
                         </div>
-                        
+
                         <h1 className="hero__title">
                             Znajdziemy dla Ciebie
                             <span className="gradient-text"> najlepszy kredyt</span>
                         </h1>
-                        
+
                         <p className="hero__description">
-                            Profesjonalne doradztwo kredytowe. Pomagamy uzyskać najlepsze warunki 
+                            Profesjonalne doradztwo kredytowe. Pomagamy uzyskać najlepsze warunki
                             finansowania na rynku. Bezpłatna analiza zdolności kredytowej.
                         </p>
-                        
+
                         <div className="hero__buttons">
-                            <Button variant="primary" size="lg" onClick={scrollToCalculator}>
+                            <Button variant="primary" size="lg" onClick={scrollToEbook}>
+                                Odbierz darmowy poradnik
+                            </Button>
+                            <Button variant="outline" size="lg" onClick={scrollToCalculator}>
                                 Sprawdź zdolność kredytową
                             </Button>
-                            <Button variant="outline" size="lg" onClick={() => setIsConsultationModalOpen(true)}>
-                                Umów rozmowę
-                            </Button>
                         </div>
-                        
+
                         <div className="hero__stats">
                             <div className="hero__stat">
                                 <div className="hero__stat-value">500+</div>
@@ -66,7 +73,7 @@ export const Hero: React.FC = () => {
                             </div>
                         </div>
                     </div>
-                    
+
                     <div className="hero__visual">
                         <div className="hero__card">
                             <div className="hero__card-header">
@@ -93,7 +100,7 @@ export const Hero: React.FC = () => {
                                 Wstępna akceptacja
                             </div>
                         </div>
-                        
+
                         <div className="hero__float hero__float--1">
                             <div className="hero__float-icon">✓</div>
                             <div className="hero__float-text">
@@ -101,7 +108,7 @@ export const Hero: React.FC = () => {
                                 <span>Szybka weryfikacja</span>
                             </div>
                         </div>
-                        
+
                         <div className="hero__float hero__float--2">
                             <div className="hero__float-icon">🏦</div>
                             <div className="hero__float-text">
