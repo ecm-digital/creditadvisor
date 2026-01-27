@@ -41,7 +41,7 @@ export const LeadMagnet: React.FC = () => {
                 <div className="lead-magnet__inner">
                     <div className="lead-magnet__image">
                         <img
-                            src="/Users/tomaszgt/.gemini/antigravity/brain/48d41abb-17ff-429e-a30d-684bc257b94d/credit_guide_ebook_mockup_1769521750406.png"
+                            src="/assets/ebook-mockup.png"
                             alt="E-book: Sekrety Zdolności Kredytowej"
                             className="lead-magnet__mockup"
                         />
