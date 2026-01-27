@@ -21,6 +21,64 @@ Aby połączyć aplikację z bazą danych Supabase:
    ```
    - URL i klucz znajdziesz w Settings → API w panelu Supabase
 
+## Rejestracja i logowanie
+
+Aplikacja używa Supabase Auth do autentykacji użytkowników.
+
+### Funkcjonalności:
+- **Rejestracja** (`/register`) - użytkownicy mogą tworzyć konta
+- **Logowanie** (`/login`) - logowanie z email i hasłem
+- **Reset hasła** - możliwość resetowania hasła przez email
+- **Protected routes** - panel klienta oraz zaawansowane funkcje wymagają zalogowania (dashboard jest dostępny bez logowania)
+- **Automatyczne tworzenie rekordu klienta** - przy rejestracji automatycznie tworzony jest rekord w tabeli clients
+
+### Wymagania:
+- Supabase Auth musi być włączone w panelu Supabase
+- Email confirmation może być włączone (domyślnie wyłączone w development)
+
+## Konfiguracja n8n
+
+Aby włączyć integrację z n8n dla automatyzacji workflow:
+
+1. **Utwórz workflow w n8n**: 
+   - Zaloguj się do swojego n8n
+   - Utwórz nowy workflow z Webhook node
+   - Skopiuj URL webhooka
+
+2. **Skonfiguruj zmienne środowiskowe**:
+   - W pliku `.env` dodaj:
+   ```
+   VITE_N8N_ENABLED=true
+   VITE_N8N_WEBHOOK_URL=https://twoj-n8n.com/webhook/xxx
+   ```
+
+3. **Dostępne eventy**:
+   - `client.created` - gdy dodany zostanie nowy klient
+   - `client.updated` - gdy klient zostanie zaktualizowany
+   - `client.deleted` - gdy klient zostanie usunięty
+   - `client.status.changed` - gdy zmieni się status klienta
+   - `sms.sent` - gdy zostanie wysłany SMS
+
+4. **Przykładowy payload webhooka**:
+   ```json
+   {
+     "event": "client.created",
+     "data": {
+       "client": {
+         "id": "uuid",
+         "name": "Jan Kowalski",
+         "email": "jan@example.com",
+         "phone": "500 123 456",
+         "status": "new",
+         "date": "2025-12-17"
+       }
+     },
+     "timestamp": "2025-12-17T14:00:00.000Z"
+   }
+   ```
+
+5. **Przykładowe workflow**: Zobacz [docs/n8n-workflow-example.md](docs/n8n-workflow-example.md) dla przykładów workflow
+
 ## Konfiguracja SMSAPI.pl
 
 Aby włączyć wysyłanie prawdziwych SMS-ów przez SMSAPI.pl:

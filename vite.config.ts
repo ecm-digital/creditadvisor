@@ -20,6 +20,11 @@ export default defineConfig({
           });
         },
       },
+      '/api/n8n': {
+        target: process.env.VITE_N8N_WEBHOOK_URL || 'http://localhost:5678',
+        changeOrigin: true,
+        rewrite: (path) => path.replace(/^\/api\/n8n/, ''),
+      },
     },
   },
 })

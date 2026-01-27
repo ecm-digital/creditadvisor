@@ -1,4 +1,5 @@
 import { supabase } from '../lib/supabase';
+import { n8nService } from './n8nService';
 
 export interface Client {
     id: string;
@@ -93,6 +94,13 @@ export const clientService = {
                 throw error;
             }
 
+            // Notify n8n about new client
+            if (data) {
+                n8nService.onClientCreated(data).catch(err => {
+                    console.error('Error notifying n8n about new client:', err);
+                });
+            }
+
             return data;
         } catch (error) {
             console.error('Error in create:', error);
@@ -124,6 +132,13 @@ export const clientService = {
                 throw error;
             }
 
+            // Notify n8n about client update
+            if (data) {
+                n8nService.onClientUpdated(data, updateData).catch(err => {
+                    console.error('Error notifying n8n about client update:', err);
+                });
+            }
+
             return data;
         } catch (error) {
             console.error('Error in update:', error);
@@ -145,6 +160,9 @@ export const clientService = {
                 console.error('Error deleting client:', error);
                 throw error;
             }
+
+            // Notify n8n about client deletion
+            // We need to get client info before deletion, so this is handled in the component
         } catch (error) {
             console.error('Error in delete:', error);
             throw error;

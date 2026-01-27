@@ -4,6 +4,7 @@ import { Button } from '../ui/Button';
 import { useToast } from '../../context/ToastContext';
 import { smsService } from '../../services/smsService';
 import { clientService, type Client } from '../../services/clientService';
+import { n8nService } from '../../services/n8nService';
 import './ClientList.css';
 
 const statusLabels = {
@@ -41,7 +42,7 @@ export const ClientList: React.FC = () => {
                 const data = await clientService.getAll();
                 setClients(data);
             } else {
-                showToast('Supabase nie jest skonfigurowane. Używasz trybu offline.', 'warning');
+                showToast('Supabase nie jest skonfigurowane. Używasz trybu offline.', 'info');
                 setClients([]);
             }
         } catch (error) {
@@ -76,14 +77,20 @@ export const ClientList: React.FC = () => {
 
     const handleSendSms = async () => {
         if (!selectedClient) return;
-        
+
         setIsSending(true);
-        
+
         try {
             const response = await smsService.sendSms(selectedClient.phone, smsMessage);
-            
+
             if (response.success) {
                 showToast(`SMS wysłany do ${selectedClient.name}`, 'success');
+
+                // Notify n8n about SMS sent
+                n8nService.onSmsSent(selectedClient, smsMessage, response).catch(err => {
+                    console.error('Error notifying n8n about SMS:', err);
+                });
+
                 closeSmsModal();
             } else {
                 const errorMsg = response.error || 'Błąd podczas wysyłania SMS';
@@ -101,7 +108,7 @@ export const ClientList: React.FC = () => {
 
     const handleAddClient = async (e: React.FormEvent) => {
         e.preventDefault();
-        
+
         // Validate email format
         const emailRegex = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
         if (!emailRegex.test(newClient.email)) {
@@ -134,6 +141,8 @@ export const ClientList: React.FC = () => {
             setAddClientModalOpen(false);
             setNewClient({ name: '', email: '', phone: '' });
             showToast('Klient został dodany', 'success');
+
+            // n8n notification is handled in clientService.create()
         } catch (error) {
             console.error('Error adding client:', error);
             showToast('Błąd podczas dodawania klienta', 'error');
@@ -162,8 +171,8 @@ export const ClientList: React.FC = () => {
         }
 
         // Check if email is taken by another client
-        const emailExists = clients.some(c => 
-            c.id !== editingClient.id && 
+        const emailExists = clients.some(c =>
+            c.id !== editingClient.id &&
             c.email.toLowerCase() === newClient.email.toLowerCase()
         );
         if (emailExists) {
@@ -182,6 +191,13 @@ export const ClientList: React.FC = () => {
                 email: newClient.email.trim().toLowerCase(),
                 phone: newClient.phone.trim(),
             });
+
+            // Check if status changed
+            if (editingClient.status !== updatedClient.status) {
+                n8nService.onStatusChanged(updatedClient, editingClient.status, updatedClient.status).catch(err => {
+                    console.error('Error notifying n8n about status change:', err);
+                });
+            }
 
             setClients(clients.map(c => c.id === editingClient.id ? updatedClient : c));
             setEditClientModalOpen(false);
@@ -208,6 +224,11 @@ export const ClientList: React.FC = () => {
             await clientService.delete(clientId);
             setClients(clients.filter(c => c.id !== clientId));
             showToast('Klient został usunięty', 'success');
+
+            // Notify n8n about client deletion
+            n8nService.onClientDeleted(clientId, clientName).catch(err => {
+                console.error('Error notifying n8n about client deletion:', err);
+            });
         } catch (error) {
             console.error('Error deleting client:', error);
             showToast('Błąd podczas usuwania klienta', 'error');
@@ -234,14 +255,14 @@ export const ClientList: React.FC = () => {
             const text = e.target?.result as string;
             const lines = text.split('\n');
             const clientsToImport: Omit<Client, 'id' | 'created_at' | 'updated_at'>[] = [];
-            
+
             // Simple CSV parsing
             // Expected format: name,email,phone,status(optional),date(optional)
             lines.forEach((line, index) => {
                 if (index === 0 && line.toLowerCase().includes('email')) return; // Skip header
-                
+
                 const [name, email, phone, status, date] = line.split(',').map(s => s.trim());
-                
+
                 if (name && email) {
                     clientsToImport.push({
                         name,
@@ -264,7 +285,7 @@ export const ClientList: React.FC = () => {
                             console.error('Error importing client:', clientData, error);
                         }
                     }
-                    
+
                     if (createdClients.length > 0) {
                         setClients([...createdClients, ...clients]);
                         showToast(`Zaimportowano ${createdClients.length} z ${clientsToImport.length} klientów`, 'success');
@@ -278,7 +299,7 @@ export const ClientList: React.FC = () => {
             } else {
                 showToast('Nie znaleziono poprawnych danych w pliku', 'error');
             }
-            
+
             // Reset input
             if (fileInputRef.current) {
                 fileInputRef.current.value = '';
@@ -309,9 +330,9 @@ export const ClientList: React.FC = () => {
             </div>
 
             {!supabaseStatus && (
-                <div style={{ 
-                    marginBottom: '16px', 
-                    padding: '12px', 
+                <div style={{
+                    marginBottom: '16px',
+                    padding: '12px',
                     backgroundColor: '#fff3e0',
                     borderRadius: '4px',
                     fontSize: '14px',
@@ -346,54 +367,54 @@ export const ClientList: React.FC = () => {
                                 </tr>
                             ) : (
                                 clients.map((client) => (
-                            <tr key={client.id}>
-                                <td>
-                                    <div className="client-name">{client.name}</div>
-                                </td>
-                                <td>
-                                    <div className="client-email">{client.email}</div>
-                                    <div className="client-phone">{client.phone}</div>
-                                </td>
-                                <td>
-                                    <span className={`status-badge status-${client.status}`}>
-                                        {statusLabels[client.status]}
-                                    </span>
-                                </td>
-                                <td>{client.date}</td>
-                                <td>
-                                    <div className="actions-cell" style={{ display: 'flex', gap: '8px', flexWrap: 'wrap' }}>
-                                        <Button 
-                                            variant="outline" 
-                                            size="sm"
-                                            onClick={() => openSmsModal(client)}
-                                            title="Wyślij SMS"
-                                        >
-                                            💬 SMS
-                                        </Button>
-                                        <Button 
-                                            variant="outline" 
-                                            size="sm"
-                                            onClick={() => handleEditClient(client)}
-                                            title="Edytuj klienta"
-                                        >
-                                            ✏️ Edytuj
-                                        </Button>
-                                        <Button 
-                                            variant="ghost" 
-                                            size="sm"
-                                            onClick={() => handleDeleteClient(client.id, client.name)}
-                                            title="Usuń klienta"
-                                            style={{ color: '#d32f2f' }}
-                                        >
-                                            🗑️ Usuń
-                                        </Button>
-                                        <Link to={`/dashboard/applications/${client.id}`}>
-                                            <Button variant="ghost" size="sm">Szczegóły</Button>
-                                        </Link>
-                                    </div>
-                                </td>
-                            </tr>
-                            ))
+                                    <tr key={client.id}>
+                                        <td>
+                                            <div className="client-name">{client.name}</div>
+                                        </td>
+                                        <td>
+                                            <div className="client-email">{client.email}</div>
+                                            <div className="client-phone">{client.phone}</div>
+                                        </td>
+                                        <td>
+                                            <span className={`status-badge status-${client.status}`}>
+                                                {statusLabels[client.status]}
+                                            </span>
+                                        </td>
+                                        <td>{client.date}</td>
+                                        <td>
+                                            <div className="actions-cell" style={{ display: 'flex', gap: '8px', flexWrap: 'wrap' }}>
+                                                <Button
+                                                    variant="outline"
+                                                    size="sm"
+                                                    onClick={() => openSmsModal(client)}
+                                                    title="Wyślij SMS"
+                                                >
+                                                    💬 SMS
+                                                </Button>
+                                                <Button
+                                                    variant="outline"
+                                                    size="sm"
+                                                    onClick={() => handleEditClient(client)}
+                                                    title="Edytuj klienta"
+                                                >
+                                                    ✏️ Edytuj
+                                                </Button>
+                                                <Button
+                                                    variant="ghost"
+                                                    size="sm"
+                                                    onClick={() => handleDeleteClient(client.id, client.name)}
+                                                    title="Usuń klienta"
+                                                    style={{ color: '#d32f2f' }}
+                                                >
+                                                    🗑️ Usuń
+                                                </Button>
+                                                <Link to={`/dashboard/applications/${client.id}`}>
+                                                    <Button variant="ghost" size="sm">Szczegóły</Button>
+                                                </Link>
+                                            </div>
+                                        </td>
+                                    </tr>
+                                ))
                             )}
                         </tbody>
                     </table>
@@ -417,7 +438,7 @@ export const ClientList: React.FC = () => {
                                         className="sms-textarea"
                                         style={{ height: '40px' }}
                                         value={newClient.name}
-                                        onChange={e => setNewClient({...newClient, name: e.target.value})}
+                                        onChange={e => setNewClient({ ...newClient, name: e.target.value })}
                                         required
                                         placeholder="np. Jan Kowalski"
                                     />
@@ -429,7 +450,7 @@ export const ClientList: React.FC = () => {
                                         className="sms-textarea"
                                         style={{ height: '40px' }}
                                         value={newClient.email}
-                                        onChange={e => setNewClient({...newClient, email: e.target.value})}
+                                        onChange={e => setNewClient({ ...newClient, email: e.target.value })}
                                         required
                                         placeholder="np. jan@example.com"
                                     />
@@ -441,7 +462,7 @@ export const ClientList: React.FC = () => {
                                         className="sms-textarea"
                                         style={{ height: '40px' }}
                                         value={newClient.phone}
-                                        onChange={e => setNewClient({...newClient, phone: e.target.value})}
+                                        onChange={e => setNewClient({ ...newClient, phone: e.target.value })}
                                         required
                                         placeholder="np. 500 123 456"
                                     />
@@ -473,7 +494,7 @@ export const ClientList: React.FC = () => {
                                         className="sms-textarea"
                                         style={{ height: '40px' }}
                                         value={newClient.name}
-                                        onChange={e => setNewClient({...newClient, name: e.target.value})}
+                                        onChange={e => setNewClient({ ...newClient, name: e.target.value })}
                                         required
                                         placeholder="np. Jan Kowalski"
                                     />
@@ -485,7 +506,7 @@ export const ClientList: React.FC = () => {
                                         className="sms-textarea"
                                         style={{ height: '40px' }}
                                         value={newClient.email}
-                                        onChange={e => setNewClient({...newClient, email: e.target.value})}
+                                        onChange={e => setNewClient({ ...newClient, email: e.target.value })}
                                         required
                                         placeholder="np. jan@example.com"
                                     />
@@ -497,7 +518,7 @@ export const ClientList: React.FC = () => {
                                         className="sms-textarea"
                                         style={{ height: '40px' }}
                                         value={newClient.phone}
-                                        onChange={e => setNewClient({...newClient, phone: e.target.value})}
+                                        onChange={e => setNewClient({ ...newClient, phone: e.target.value })}
                                         required
                                         placeholder="np. 500 123 456"
                                     />
@@ -524,7 +545,7 @@ export const ClientList: React.FC = () => {
                             <div className="sms-recipient">
                                 Do: <strong>{selectedClient.name}</strong> ({selectedClient.phone})
                             </div>
-                            <textarea 
+                            <textarea
                                 className="sms-textarea"
                                 value={smsMessage}
                                 onChange={(e) => setSmsMessage(e.target.value)}
@@ -536,9 +557,9 @@ export const ClientList: React.FC = () => {
                                 <span>Koszt: 0.16 zł</span>
                             </div>
                             {smsStatus && (
-                                <div style={{ 
-                                    marginTop: '12px', 
-                                    padding: '8px 12px', 
+                                <div style={{
+                                    marginTop: '12px',
+                                    padding: '8px 12px',
                                     backgroundColor: smsStatus.configured ? '#e8f5e9' : '#fff3e0',
                                     borderRadius: '4px',
                                     fontSize: '12px',
