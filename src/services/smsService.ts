@@ -22,11 +22,8 @@ interface SmsApiResponse {
 }
 
 // Configuration
-// Use proxy in development to avoid CORS issues
-const IS_DEV = import.meta.env.DEV;
-const SMSAPI_URL = IS_DEV 
-    ? '/api/smsapi/sms.do'  // Use Vite proxy in development
-    : 'https://api.smsapi.pl/sms.do';  // Direct call in production (if CORS allows)
+// Use proxy in both dev and prod to avoid CORS issues
+const SMSAPI_URL = '/api/smsapi/sms.do';
 const SMSAPI_TOKEN = import.meta.env.VITE_SMSAPI_TOKEN || '';
 const USE_MOCK = import.meta.env.VITE_SMSAPI_USE_MOCK === 'true' || !SMSAPI_TOKEN;
 
@@ -38,15 +35,15 @@ const USE_MOCK = import.meta.env.VITE_SMSAPI_USE_MOCK === 'true' || !SMSAPI_TOKE
 function normalizePhoneNumber(phoneNumber: string): string {
     // Remove all non-digit characters except +
     let normalized = phoneNumber.replace(/[^\d+]/g, '');
-    
+
     // Remove + if present
     normalized = normalized.replace(/^\+/, '');
-    
+
     // Ensure Polish country code (48)
     if (!normalized.startsWith('48')) {
         normalized = `48${normalized}`;
     }
-    
+
     return normalized;
 }
 
@@ -55,7 +52,7 @@ function normalizePhoneNumber(phoneNumber: string): string {
  */
 function getErrorMessage(error: string | number): string {
     const errorStr = String(error);
-    
+
     // Common SMSAPI error codes
     const errorMessages: Record<string, string> = {
         '98': 'Konto jest ograniczone. Możesz wysyłać SMS-y tylko na numer użyty podczas rejestracji. Skontaktuj się z obsługą SMSAPI.pl, aby zdjąć to ograniczenie.',
@@ -89,7 +86,7 @@ export const smsService = {
      */
     async sendSms(phoneNumber: string, message: string): Promise<SmsResponse> {
         const normalizedPhone = normalizePhoneNumber(phoneNumber);
-        
+
         console.log(`[SMS Service] Preparing to send to ${normalizedPhone}: "${message.substring(0, 50)}..."`);
 
         // MOCK IMPLEMENTATION (for development/testing)
@@ -98,9 +95,9 @@ export const smsService = {
             return new Promise((resolve) => {
                 setTimeout(() => {
                     console.log(`[SMS Service] MOCK SUCCESS: Message sent to ${normalizedPhone}`);
-                    resolve({ 
-                        success: true, 
-                        messageId: 'mock-' + Date.now() 
+                    resolve({
+                        success: true,
+                        messageId: 'mock-' + Date.now()
                     });
                 }, 800);
             });
@@ -137,7 +134,7 @@ export const smsService = {
 
             if (!response.ok) {
                 console.error('[SMS Service] API Error:', response.status, responseText);
-                
+
                 // Try to parse error if it's JSON
                 let errorMessage = `Błąd HTTP ${response.status}: Błąd podczas wysyłania SMS`;
                 try {
@@ -150,10 +147,10 @@ export const smsService = {
                         errorMessage = getErrorMessage(responseText);
                     }
                 }
-                
-                return { 
-                    success: false, 
-                    error: errorMessage 
+
+                return {
+                    success: false,
+                    error: errorMessage
                 };
             }
 
@@ -167,51 +164,51 @@ export const smsService = {
                     error: `Nieprawidłowa odpowiedź z API: ${responseText.substring(0, 100)}`
                 };
             }
-            
+
             // Check for errors in response
             if (data.error) {
                 console.error('[SMS Service] API returned error:', data.error);
                 const errorMessage = getErrorMessage(data.error);
-                return { 
-                    success: false, 
-                    error: errorMessage 
+                return {
+                    success: false,
+                    error: errorMessage
                 };
             }
 
             // Check response list for errors
             if (data.list && data.list.length > 0) {
                 const firstItem = data.list[0];
-                
+
                 if (firstItem.error) {
                     console.error('[SMS Service] SMS sending failed:', firstItem.error);
                     const errorMessage = getErrorMessage(firstItem.error);
-                    return { 
-                        success: false, 
-                        error: errorMessage 
+                    return {
+                        success: false,
+                        error: errorMessage
                     };
                 }
-                
+
                 if (firstItem.status === 'QUEUE' || firstItem.status === 'SENT') {
                     console.log('[SMS Service] SMS sent successfully:', firstItem.id);
-                    return { 
-                        success: true, 
-                        messageId: firstItem.id 
+                    return {
+                        success: true,
+                        messageId: firstItem.id
                     };
                 }
             }
 
             // Fallback success if no errors detected
-            return { 
-                success: true, 
-                messageId: data.list?.[0]?.id || 'unknown' 
+            return {
+                success: true,
+                messageId: data.list?.[0]?.id || 'unknown'
             };
 
         } catch (error) {
             console.error('[SMS Service] Network/Parse Error:', error);
             const errorMessage = error instanceof Error ? error.message : 'Nieznany błąd';
-            return { 
-                success: false, 
-                error: `Błąd połączenia: ${errorMessage}` 
+            return {
+                success: false,
+                error: `Błąd połączenia: ${errorMessage}`
             };
         }
     },
