@@ -59,6 +59,21 @@ export const CreditCalculator: React.FC = () => {
 
                 <div className="calculator__content">
                     <div className="calculator__form">
+                        <div className="calculator__type-selector">
+                            <button
+                                className={`type-btn ${loanType === 'mortgage' ? 'active' : ''}`}
+                                onClick={() => setLoanType('mortgage')}
+                            >
+                                Hipoteczny
+                            </button>
+                            <button
+                                className={`type-btn ${loanType === 'cash' ? 'active' : ''}`}
+                                onClick={() => setLoanType('cash')}
+                            >
+                                Gotówkowy
+                            </button>
+                        </div>
+
                         <div className="calculator__field">
                             <label className="calculator__field-label">
                                 Dochód netto (miesięcznie)
@@ -100,8 +115,8 @@ export const CreditCalculator: React.FC = () => {
                             <div className="calculator__slider">
                                 <input
                                     type="range"
-                                    min="5"
-                                    max="35"
+                                    min="1"
+                                    max={loanType === 'mortgage' ? 35 : 10}
                                     step="1"
                                     value={period}
                                     onChange={(e) => setPeriod(Number(e.target.value))}
