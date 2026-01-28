@@ -25,6 +25,7 @@ interface SmsApiResponse {
 // Use proxy in both dev and prod to avoid CORS issues
 const SMSAPI_URL = '/api/smsapi/sms.do';
 const SMSAPI_TOKEN = import.meta.env.VITE_SMSAPI_TOKEN || '';
+const SMSAPI_FROM = import.meta.env.VITE_SMS_FROM || 'Info'; // Default sender name
 const USE_MOCK = import.meta.env.VITE_SMSAPI_USE_MOCK === 'true' || !SMSAPI_TOKEN;
 
 /**
@@ -109,6 +110,7 @@ export const smsService = {
             const formData = new URLSearchParams();
             formData.append('to', normalizedPhone);
             formData.append('message', message);
+            formData.append('from', SMSAPI_FROM);
             formData.append('format', 'json');
             formData.append('encoding', 'utf-8');
 
