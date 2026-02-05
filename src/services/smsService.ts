@@ -23,10 +23,10 @@ interface SmsApiResponse {
 
 // Configuration
 // Use proxy in both dev and prod to avoid CORS issues
-const SMSAPI_URL = '/api/smsapi/sms.do';
+// Use Firebase Function proxy
+const SMSAPI_URL = 'https://europe-west1-blachlinskikredyty.cloudfunctions.net/sendSms';
 const SMSAPI_TOKEN = import.meta.env.VITE_SMSAPI_TOKEN || '';
-const SMSAPI_FROM = import.meta.env.VITE_SMS_FROM || 'Info'; // Default sender name
-const USE_MOCK = import.meta.env.VITE_SMSAPI_USE_MOCK === 'true' || !SMSAPI_TOKEN;
+const USE_MOCK = import.meta.env.VITE_SMSAPI_USE_MOCK === 'true';
 
 /**
  * Normalizes phone number to SMSAPI format
@@ -106,26 +106,21 @@ export const smsService = {
 
         // REAL IMPLEMENTATION - SMSAPI.pl integration
         try {
-            // SMSAPI.pl requires form-data format
-            const formData = new URLSearchParams();
-            formData.append('to', normalizedPhone);
-            formData.append('message', message);
-            formData.append('from', SMSAPI_FROM);
-            formData.append('format', 'json');
-            formData.append('encoding', 'utf-8');
+            // Firebase Function expects JSON body
+            const payload = {
+                phoneNumber: normalizedPhone,
+                message: message
+            };
 
-            console.log('[SMS Service] Sending request to SMSAPI.pl...');
-            console.log('[SMS Service] Token present:', !!SMSAPI_TOKEN);
+            console.log('[SMS Service] Sending request to Firebase Function...');
             console.log('[SMS Service] Phone:', normalizedPhone);
-            console.log('[SMS Service] Message length:', message.length);
 
             const response = await fetch(SMSAPI_URL, {
                 method: 'POST',
                 headers: {
-                    'Authorization': `Bearer ${SMSAPI_TOKEN}`,
-                    'Content-Type': 'application/x-www-form-urlencoded',
+                    'Content-Type': 'application/json',
                 },
-                body: formData.toString(),
+                body: JSON.stringify(payload),
             });
 
             console.log('[SMS Service] Response status:', response.status);

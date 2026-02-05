@@ -5,19 +5,19 @@ const steps = [
     {
         number: '01',
         title: 'Bezpłatna Konsultacja',
-        description: 'Analizujemy Twoją sytuację finansową, badamy zdolność i sprawdzamy historię w BIK. Odpowiadamy na wszystkie pytania.',
+        description: 'Analizuję Twoją sytuację finansową, badam zdolność i sprawdzam historię w BIK. Odpowiadam na wszystkie pytania.',
         icon: '💬'
     },
     {
         number: '02',
         title: 'Wybór Oferty i Formalności',
-        description: 'Porównujemy oferty z 15 banków i wybieramy tę najkorzystniejszą. Pomagamy skompletować wszystkie dokumenty.',
+        description: 'Porównuję oferty z 15 banków i wybieram tę najkorzystniejszą. Pomagam skompletować wszystkie dokumenty.',
         icon: '📄'
     },
     {
         number: '03',
         title: 'Decyzja i Finansowanie',
-        description: 'Składamy wnioski, negocjujemy warunki i nadzorujemy proces aż do podpisania umowy i wypłaty środków.',
+        description: 'Składam wnioski, negocjuję warunki i nadzoruję proces aż do podpisania umowy i wypłaty środków.',
         icon: '🏦'
     }
 ];
@@ -27,10 +27,10 @@ export const Process: React.FC = () => {
         <section className="process" id="how-it-works">
             <div className="container">
                 <div className="process__header">
-                    <span className="process__label">Nasza Metoda</span>
+                    <span className="process__label">Moja Metoda</span>
                     <h2 className="process__title">Jak wygląda proces?</h2>
                     <p className="process__subtitle">
-                        Przejdziemy z Tobą przez cały proces kredytowy krok po kroku, dbając o każdy szczegół.
+                        Przejdę z Tobą przez cały proces kredytowy krok po kroku, dbając o każdy szczegół.
                     </p>
                 </div>
 

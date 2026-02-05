@@ -54,20 +54,18 @@ export const Header: React.FC = () => {
                                 <path d="M2 12L12 17L22 12" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" />
                             </svg>
                         </div>
-                        <span>CreditAdvisor</span>
+                        <span>Tomasz Blachliński</span>
                     </Link>
 
                     <nav className="header__nav">
                     </nav>
 
                     <div className="header__actions">
-                        <Link to="/dashboard" className="header__link header__link--accent">
-                            Panel Doradcy
-                        </Link>
+
                         {user ? (
                             <>
                                 <span className="header__user-name">
-                                    {user.user_metadata?.name || user.email}
+                                    {user.displayName || user.email}
                                 </span>
                                 <Button
                                     variant="ghost"
@@ -78,29 +76,18 @@ export const Header: React.FC = () => {
                                 </Button>
                             </>
                         ) : (
-                            <>
-                                <Link to="/login" className="header__link">
-                                    Zaloguj się
-                                </Link>
-                                <Link to="/register">
-                                    <Button variant="outline" size="sm">
-                                        Zarejestruj się
+                            <div style={{ display: 'flex', gap: '0.5rem', alignItems: 'center' }}>
+                                <Link to="/dashboard">
+                                    <Button variant="ghost" size="sm">
+                                        Dla Doradców
                                     </Button>
                                 </Link>
-                                <Button
-                                    variant="primary"
-                                    size="sm"
-                                    onClick={() => {
-                                        if (showModalOnThisPage) {
-                                            setIsConsultationModalOpen(true);
-                                        } else {
-                                            window.location.href = '/#contact';
-                                        }
-                                    }}
-                                >
-                                    Bezpłatna konsultacja
-                                </Button>
-                            </>
+                                <Link to="/login">
+                                    <Button variant="primary" size="sm">
+                                        Logowanie Klienta
+                                    </Button>
+                                </Link>
+                            </div>
                         )}
                     </div>
 
@@ -140,31 +127,16 @@ export const Header: React.FC = () => {
                         </>
                     ) : (
                         <>
+                            <Link to="/dashboard" onClick={() => setIsMenuOpen(false)}>
+                                <Button variant="ghost" size="lg" fullWidth>Panel Doradcy</Button>
+                            </Link>
                             <Link to="/login" onClick={() => setIsMenuOpen(false)}>
-                                <Button variant="outline" size="lg" fullWidth>Zaloguj się</Button>
+                                <Button variant="primary" size="lg" fullWidth>Logowanie Klienta</Button>
                             </Link>
-                            <Link to="/register" onClick={() => setIsMenuOpen(false)}>
-                                <Button variant="primary" size="lg" fullWidth>Zarejestruj się</Button>
-                            </Link>
-                            <Button
-                                variant="primary"
-                                size="lg"
-                                fullWidth
-                                onClick={() => {
-                                    setIsMenuOpen(false);
-                                    if (showModalOnThisPage) {
-                                        setIsConsultationModalOpen(true);
-                                    } else {
-                                        window.location.href = '/#contact';
-                                    }
-                                }}
-                            >
-                                Bezpłatna konsultacja
-                            </Button>
                         </>
                     )}
                 </div>
             </div>
-        </header>
+        </header >
     );
 };

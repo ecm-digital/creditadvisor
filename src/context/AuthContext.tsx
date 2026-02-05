@@ -1,15 +1,16 @@
 import React, { createContext, useContext, useEffect, useState } from 'react';
-import type { User, Session, AuthError } from '@supabase/supabase-js';
-import { supabase } from '../lib/supabase';
+import { onAuthStateChanged, signInWithEmailAndPassword, createUserWithEmailAndPassword, signOut as firebaseSignOut, sendPasswordResetEmail } from 'firebase/auth';
+import type { User } from 'firebase/auth';
+import { collection, addDoc } from 'firebase/firestore';
+import { auth, db } from '../lib/firebase';
 
 interface AuthContextType {
     user: User | null;
-    session: Session | null;
     loading: boolean;
-    signUp: (email: string, password: string, name: string, phone: string) => Promise<{ error: AuthError | null }>;
-    signIn: (email: string, password: string) => Promise<{ error: AuthError | null }>;
+    signUp: (email: string, password: string, name: string, phone: string) => Promise<{ error: any }>;
+    signIn: (email: string, password: string) => Promise<{ error: any }>;
     signOut: () => Promise<void>;
-    resetPassword: (email: string) => Promise<{ error: AuthError | null }>;
+    resetPassword: (email: string) => Promise<{ error: any }>;
 }
 
 const AuthContext = createContext<AuthContextType | undefined>(undefined);
@@ -28,96 +29,69 @@ interface AuthProviderProps {
 
 export const AuthProvider: React.FC<AuthProviderProps> = ({ children }) => {
     const [user, setUser] = useState<User | null>(null);
-    const [session, setSession] = useState<Session | null>(null);
     const [loading, setLoading] = useState(true);
 
     useEffect(() => {
-        // Get initial session
-        supabase.auth.getSession().then(({ data: { session } }) => {
-            setSession(session);
-            setUser(session?.user ?? null);
+        const unsubscribe = onAuthStateChanged(auth, (user) => {
+            setUser(user);
             setLoading(false);
         });
 
-        // Listen for auth changes
-        const {
-            data: { subscription },
-        } = supabase.auth.onAuthStateChange((_event, session) => {
-            setSession(session);
-            setUser(session?.user ?? null);
-            setLoading(false);
-        });
-
-        return () => subscription.unsubscribe();
+        return () => unsubscribe();
     }, []);
 
     const signUp = async (email: string, password: string, name: string, phone: string) => {
         try {
-            const { data, error } = await supabase.auth.signUp({
-                email,
-                password,
-                options: {
-                    data: {
-                        name,
-                        phone,
-                    },
-                },
-            });
+            const userCredential = await createUserWithEmailAndPassword(auth, email, password);
+            const user = userCredential.user;
 
-            if (error) {
-                return { error };
-            }
-
-            // Create client record if user is created
-            if (data.user) {
+            // Create client record in Firestore
+            if (user) {
                 try {
-                    const { error: clientError } = await supabase
-                        .from('clients')
-                        .insert([{
-                            user_id: data.user.id,
-                            name,
-                            email: email.toLowerCase(),
-                            phone,
-                            status: 'new',
-                            date: new Date().toISOString().split('T')[0],
-                        }]);
-
-                    if (clientError) {
-                        console.error('Error creating client record:', clientError);
-                    }
+                    await addDoc(collection(db, 'clients'), {
+                        user_id: user.uid,
+                        name,
+                        email: email.toLowerCase(),
+                        phone,
+                        status: 'new',
+                        date: new Date().toISOString().split('T')[0],
+                        created_at: new Date().toISOString(),
+                    });
                 } catch (err) {
                     console.error('Error creating client record:', err);
                 }
             }
 
             return { error: null };
-        } catch (error) {
-            return { error: error as AuthError };
+        } catch (error: any) {
+            return { error };
         }
     };
 
     const signIn = async (email: string, password: string) => {
-        const { error } = await supabase.auth.signInWithPassword({
-            email,
-            password,
-        });
-        return { error };
+        try {
+            await signInWithEmailAndPassword(auth, email, password);
+            return { error: null };
+        } catch (error: any) {
+            return { error };
+        }
     };
 
     const signOut = async () => {
-        await supabase.auth.signOut();
+        await firebaseSignOut(auth);
     };
 
     const resetPassword = async (email: string) => {
-        const { error } = await supabase.auth.resetPasswordForEmail(email, {
-            redirectTo: `${window.location.origin}/reset-password`,
-        });
-        return { error };
+        try {
+            await sendPasswordResetEmail(auth, email);
+            return { error: null };
+        } catch (error: any) {
+            return { error };
+        }
     };
 
     const value = {
         user,
-        session,
         loading,
         signUp,
         signIn,

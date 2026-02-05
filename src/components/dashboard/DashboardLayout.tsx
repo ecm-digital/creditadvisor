@@ -26,7 +26,7 @@ export const DashboardLayout: React.FC<DashboardLayoutProps> = ({ children }) =>
 
     const getUserInitials = () => {
         if (!user) return 'D';
-        const name = user.user_metadata?.name || user.email || 'Doradca';
+        const name = user.displayName || user.email || 'Doradca';
         const parts = name.split(' ');
         if (parts.length >= 2) {
             return (parts[0][0] + parts[1][0]).toUpperCase();
@@ -36,8 +36,10 @@ export const DashboardLayout: React.FC<DashboardLayoutProps> = ({ children }) =>
 
     const getUserName = () => {
         if (!user) return 'Doradca';
-        return user.user_metadata?.name || user.email || 'Doradca';
+        return user.displayName || user.email || 'Doradca';
     };
+
+    const isClient = user?.email?.endsWith('@kredyt.pl');
 
     return (
         <div className="dashboard-layout">
@@ -46,10 +48,19 @@ export const DashboardLayout: React.FC<DashboardLayoutProps> = ({ children }) =>
                     <div className="sidebar-logo">CreditAdvisor</div>
                 </div>
                 <nav className="sidebar-nav">
-                    <Link to="/dashboard" className="sidebar-link">Klienci</Link>
-                    <Link to="/dashboard/applications" className="sidebar-link">Wnioski</Link>
-                    <Link to="/dashboard/calendar" className="sidebar-link">Kalendarz</Link>
-                    <Link to="/dashboard/settings" className="sidebar-link">Ustawienia</Link>
+                    {!isClient && (
+                        <>
+                            <Link to="/dashboard" className="sidebar-link">Klienci</Link>
+                            <Link to="/dashboard/applications" className="sidebar-link">Wnioski</Link>
+                            <Link to="/dashboard/calendar" className="sidebar-link">Kalendarz</Link>
+                            <Link to="/dashboard/settings" className="sidebar-link">Ustawienia</Link>
+                        </>
+                    )}
+                    {isClient && (
+                        <div style={{ padding: '12px', color: '#64748b', fontSize: '14px' }}>
+                            Witaj w panelu klienta. Tutaj sprawdzisz przygotowane oferty.
+                        </div>
+                    )}
                 </nav>
                 <div className="sidebar-footer">
                     <Link to="/" className="sidebar-link">Wróć na stronę internetową</Link>
@@ -60,7 +71,7 @@ export const DashboardLayout: React.FC<DashboardLayoutProps> = ({ children }) =>
             </aside>
             <main className="dashboard-main">
                 <header className="dashboard-header">
-                    <h1 className="page-title">Panel Doradcy</h1>
+                    <h1 className="page-title">{isClient ? 'Panel Klienta' : 'Panel Doradcy'}</h1>
                     <div className="user-profile">
                         <span className="user-name">{getUserName()}</span>
                         <div className="user-avatar">{getUserInitials()}</div>

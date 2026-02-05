@@ -3,19 +3,19 @@ import './Testimonials.css';
 
 const testimonials = [
     {
-        content: 'Dzięki CreditAdvisor udało mi się uzyskać kredyt hipoteczny na świetnych warunkach. Profesjonalna obsługa i pełne wsparcie na każdym etapie.',
+        content: 'Dzięki Tomaszowi udało mi się uzyskać kredyt hipoteczny na świetnych warunkach. Profesjonalna obsługa i pełne wsparcie na każdym etapie.',
         author: 'Katarzyna Nowak',
         role: 'Kredyt hipoteczny, 450 000 zł',
         avatar: 'KN',
     },
     {
-        content: 'Szybko i sprawnie. Doradca przeprowadził nas przez cały proces, a decyzję kredytową dostaliśmy w 2 dni. Polecam każdemu!',
+        content: 'Szybko i sprawnie. Pan Tomasz przeprowadził nas przez cały proces, a decyzję kredytową dostaliśmy w 2 dni. Polecam każdemu!',
         author: 'Michał Kowalski',
         role: 'Kredyt gotówkowy, 80 000 zł',
         avatar: 'MK',
     },
     {
-        content: 'Miałem trudną historię kredytową, ale eksperci z CreditAdvisor znaleźli rozwiązanie. Teraz mam skonsolidowane zobowiązania i niższą ratę.',
+        content: 'Miałem trudną historię kredytową, ale Tomasz Blachliński znalazł rozwiązanie. Teraz mam skonsolidowane zobowiązania i niższą ratę.',
         author: 'Robert Wiśniewski',
         role: 'Konsolidacja, 120 000 zł',
         avatar: 'RW',
@@ -29,13 +29,13 @@ export const Testimonials: React.FC = () => {
                 <div className="testimonials__header">
                     <span className="testimonials__label">Opinie klientów</span>
                     <h2 className="testimonials__title">
-                        Zaufali nam setki klientów
+                        Zaufały mi setki klientów
                     </h2>
                     <p className="testimonials__subtitle">
-                        Zobacz, co mówią o nas osoby, którym pomogliśmy uzyskać finansowanie
+                        Zobacz, co mówią o mnie osoby, którym pomogłem uzyskać finansowanie
                     </p>
                 </div>
-                
+
                 <div className="testimonials__grid">
                     {testimonials.map((item, index) => (
                         <div key={index} className="testimonial-card">
@@ -57,7 +57,7 @@ export const Testimonials: React.FC = () => {
                         </div>
                     ))}
                 </div>
-                
+
                 <div className="testimonials__trust">
                     <div className="trust-item">
                         <span className="trust-item__icon">🏆</span>

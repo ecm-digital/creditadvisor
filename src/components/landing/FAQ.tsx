@@ -4,11 +4,11 @@ import './FAQ.css';
 const faqs = [
     {
         question: 'Czy doradztwo kredytowe jest płatne?',
-        answer: 'Nie, nasze doradztwo dla klientów indywidualnych jest całkowicie bezpłatne. Rozliczamy się bezpośrednio z bankami, a Ty otrzymujesz dostęp do eksperckiej wiedzy bez żadnych kosztów.'
+        answer: 'Nie, moje doradztwo dla klientów indywidualnych jest całkowicie bezpłatne. Rozliczam się bezpośrednio z bankami, a Ty otrzymujesz dostęp do eksperckiej wiedzy bez żadnych kosztów.'
     },
     {
-        question: 'Z iloma bankami współpracujecie?',
-        answer: 'Mamy w ofercie ponad 15 największych banków w Polsce. Dzięki temu możemy porównać oferty w jednym miejscu i wybrać tę, która jest dla Ciebie najkorzystniejsza.'
+        question: 'Z iloma bankami współpracujesz?',
+        answer: 'Mam w ofercie ponad 15 największych banków w Polsce. Dzięki temu mogę porównać oferty w jednym miejscu i wybrać tę, która jest dla Ciebie najkorzystniejsza.'
     },
     {
         question: 'Jakich dokumentów potrzebuję do badania zdolności?',

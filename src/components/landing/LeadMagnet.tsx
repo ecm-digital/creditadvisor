@@ -95,7 +95,7 @@ export const LeadMagnet: React.FC = () => {
                                 {isSubmitting ? 'Wysyłanie...' : 'Odbierz darmowy poradnik'}
                             </Button>
                             <p className="lead-magnet__footer-text">
-                                * Nie spamujemy. Twój adres jest u nas bezpieczny.
+                                * Nie spamuję. Twój adres jest u mnie bezpieczny.
                             </p>
                         </form>
                     </div>

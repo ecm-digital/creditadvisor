@@ -15,7 +15,7 @@ export const LeadForm: React.FC = () => {
 
     const handleSubmit = (e: React.FormEvent) => {
         e.preventDefault();
-        showToast('Dziękujemy! Skontaktujemy się z Tobą wkrótce.', 'success');
+        showToast('Dziękujemy! Skontaktuję się z Tobą wkrótce.', 'success');
     };
 
     const handleChange = (e: React.ChangeEvent<HTMLInputElement | HTMLSelectElement>) => {
@@ -32,17 +32,17 @@ export const LeadForm: React.FC = () => {
                             Umów bezpłatną konsultację
                         </h2>
                         <p className="lead-form__description">
-                            Wypełnij formularz, a nasz doradca skontaktuje się z Tobą 
+                            Wypełnij formularz, a skontaktuję się z Tobą
                             w ciągu 24 godzin roboczych.
                         </p>
-                        
+
                         <ul className="lead-form__benefits">
                             <li>✓ Bezpłatna analiza zdolności kredytowej</li>
                             <li>✓ Porównanie ofert z 15 banków</li>
                             <li>✓ Pomoc w przygotowaniu dokumentów</li>
                             <li>✓ Negocjacje warunków z bankiem</li>
                         </ul>
-                        
+
                         <div className="lead-form__contact">
                             <div className="lead-form__contact-item">
                                 <span className="lead-form__contact-icon">📞</span>
@@ -55,12 +55,12 @@ export const LeadForm: React.FC = () => {
                                 <span className="lead-form__contact-icon">✉️</span>
                                 <div>
                                     <div className="lead-form__contact-label">Email</div>
-                                    <div className="lead-form__contact-value">kontakt@creditadvisor.pl</div>
+                                    <div className="lead-form__contact-value">kontakt@blachlinski.pl</div>
                                 </div>
                             </div>
                         </div>
                     </div>
-                    
+
                     <form className="lead-form__form" onSubmit={handleSubmit}>
                         <div className="lead-form__row">
                             <div className="lead-form__field">
@@ -86,7 +86,7 @@ export const LeadForm: React.FC = () => {
                                 />
                             </div>
                         </div>
-                        
+
                         <div className="lead-form__field">
                             <label>Email</label>
                             <input
@@ -98,7 +98,7 @@ export const LeadForm: React.FC = () => {
                                 required
                             />
                         </div>
-                        
+
                         <div className="lead-form__row">
                             <div className="lead-form__field">
                                 <label>Kwota kredytu</label>
@@ -120,13 +120,13 @@ export const LeadForm: React.FC = () => {
                                 </select>
                             </div>
                         </div>
-                        
+
                         <Button type="submit" variant="primary" size="lg" fullWidth>
                             Wyślij zapytanie
                         </Button>
-                        
+
                         <p className="lead-form__disclaimer">
-                            Wysyłając formularz, wyrażasz zgodę na przetwarzanie danych osobowych 
+                            Wysyłając formularz, wyrażasz zgodę na przetwarzanie danych osobowych
                             w celu kontaktu. <a href="#">Polityka prywatności</a>
                         </p>
                     </form>

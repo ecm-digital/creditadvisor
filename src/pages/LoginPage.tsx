@@ -23,15 +23,24 @@ export const LoginPage: React.FC = () => {
         setLoading(true);
 
         try {
-            const { error } = await signIn(email, password);
+            // Check if input is an email (for admin) or phone (for client)
+            let loginId = email;
+            // Phone login
+            if (!email.includes('@')) {
+                // Assume phone number -> convert to dummy email
+                const cleanPhone = email.replace(/\D/g, '');
+                loginId = `${cleanPhone}@kredyt.pl`;
+            }
+
+            const { error } = await signIn(loginId, password);
 
             if (error) {
                 if (error.message.includes('Invalid login credentials')) {
-                    setError('Nieprawidłowy email lub hasło');
+                    setError('Nieprawidłowy numer/email lub hasło');
                 } else if (error.message.includes('Email not confirmed')) {
-                    setError('Potwierdź swój adres email przed zalogowaniem');
+                    setError('Konto nieaktywne');
                 } else {
-                    setError(error.message || 'Błąd podczas logowania');
+                    setError('Błąd logowania. Sprawdź kod.');
                 }
             } else {
                 showToast('Zalogowano pomyślnie', 'success');
@@ -71,29 +80,30 @@ export const LoginPage: React.FC = () => {
             <div className="login-container">
                 <div className="login-header">
                     <h1 className="login-logo">CreditAdvisor</h1>
-                    <p className="login-subtitle">Zaloguj się do panelu doradcy</p>
+                    <p className="login-subtitle">Panel Klienta</p>
                 </div>
+
                 <form className="login-form" onSubmit={handleLogin}>
                     {error && <div className="login-error">{error}</div>}
                     <div className="form-group">
-                        <label htmlFor="email">Email</label>
+                        <label htmlFor="loginId">Numer telefonu</label>
                         <input
-                            type="email"
-                            id="email"
+                            type="tel"
+                            id="loginId"
                             value={email}
                             onChange={(e) => setEmail(e.target.value)}
-                            placeholder="admin@creditadvisor.com"
+                            placeholder="np. 500123456"
                             required
                         />
                     </div>
                     <div className="form-group">
-                        <label htmlFor="password">Hasło</label>
+                        <label htmlFor="password">Kod dostępu (z SMS)</label>
                         <input
                             type="password"
                             id="password"
                             value={password}
                             onChange={(e) => setPassword(e.target.value)}
-                            placeholder="admin"
+                            placeholder="Wpisz kod z SMS"
                             required
                         />
                     </div>
@@ -128,10 +138,10 @@ export const LoginPage: React.FC = () => {
                             <Button type="submit" fullWidth size="sm" disabled={resetLoading} style={{ marginBottom: '8px' }}>
                                 {resetLoading ? 'Wysyłanie...' : 'Wyślij link resetujący'}
                             </Button>
-                            <Button 
-                                type="button" 
-                                variant="ghost" 
-                                fullWidth 
+                            <Button
+                                type="button"
+                                variant="ghost"
+                                fullWidth
                                 size="sm"
                                 onClick={() => { setShowResetPassword(false); setResetEmail(''); }}
                             >

@@ -5,6 +5,7 @@ import { useToast } from '../../context/ToastContext';
 import { smsService } from '../../services/smsService';
 import { clientService, type Client } from '../../services/clientService';
 import { n8nService } from '../../services/n8nService';
+import { seedClients } from '../../utils/seedData';
 import './ClientList.css';
 
 const statusLabels = {
@@ -26,13 +27,13 @@ export const ClientList: React.FC = () => {
     const [smsMessage, setSmsMessage] = useState('');
     const [isSending, setIsSending] = useState(false);
     const [smsStatus, setSmsStatus] = useState<{ configured: boolean; mode: 'mock' | 'production' } | null>(null);
-    const [supabaseStatus, setSupabaseStatus] = useState<boolean>(false);
+    const [backendConfigured, setBackendConfigured] = useState<boolean>(false);
 
     // Load clients from Supabase on mount
     useEffect(() => {
         loadClients();
         setSmsStatus(smsService.getStatus());
-        setSupabaseStatus(clientService.isConfigured());
+        setBackendConfigured(clientService.isConfigured());
     }, []);
 
     const loadClients = async () => {
@@ -42,7 +43,7 @@ export const ClientList: React.FC = () => {
                 const data = await clientService.getAll();
                 setClients(data);
             } else {
-                showToast('Supabase nie jest skonfigurowane. Używasz trybu offline.', 'info');
+                showToast('Firebase nie jest skonfigurowane. Używasz trybu offline.', 'info');
                 setClients([]);
             }
         } catch (error) {
@@ -124,7 +125,7 @@ export const ClientList: React.FC = () => {
         }
 
         if (!clientService.isConfigured()) {
-            showToast('Supabase nie jest skonfigurowane. Nie można dodać klienta.', 'error');
+            showToast('Firebase nie jest skonfigurowane. Nie można dodać klienta.', 'error');
             return;
         }
 
@@ -181,7 +182,7 @@ export const ClientList: React.FC = () => {
         }
 
         if (!clientService.isConfigured()) {
-            showToast('Supabase nie jest skonfigurowane. Nie można zaktualizować klienta.', 'error');
+            showToast('Firebase nie jest skonfigurowane. Nie można zaktualizować klienta.', 'error');
             return;
         }
 
@@ -216,7 +217,7 @@ export const ClientList: React.FC = () => {
         }
 
         if (!clientService.isConfigured()) {
-            showToast('Supabase nie jest skonfigurowane. Nie można usunąć klienta.', 'error');
+            showToast('Firebase nie jest skonfigurowane. Nie można usunąć klienta.', 'error');
             return;
         }
 
@@ -246,7 +247,7 @@ export const ClientList: React.FC = () => {
         if (!file) return;
 
         if (!clientService.isConfigured()) {
-            showToast('Supabase nie jest skonfigurowane. Nie można importować klientów.', 'error');
+            showToast('Firebase nie jest skonfigurowane. Nie można importować klientów.', 'error');
             return;
         }
 
@@ -323,265 +324,326 @@ export const ClientList: React.FC = () => {
                     <Button variant="outline" size="sm" onClick={() => fileInputRef.current?.click()}>
                         Importuj CSV
                     </Button>
+                    <Button
+                        variant="outline"
+                        size="sm"
+                        onClick={async () => {
+                            console.log('Generate button clicked');
+                            if (!clientService.isConfigured()) {
+                                showToast('Błąd konfiguracji Firebase.', 'error');
+                                return;
+                            }
+
+                            if (window.confirm('Czy dodać 5 testowych klientów?')) {
+                                setIsLoading(true);
+                                try {
+                                    console.log('Starting seed...');
+                                    const newClients = await seedClients();
+                                    console.log('Seed done', newClients);
+
+                                    if (newClients.length > 0) {
+                                        setClients(prev => [...newClients, ...prev]);
+                                        showToast(`Sukces! Dodano ${newClients.length} klientów.`, 'success');
+                                    } else {
+                                        showToast('Nie udało się dodać klientów. Sprawdź konsolę.', 'error');
+                                    }
+                                } catch (error) {
+                                    console.error('Seed error:', error);
+                                    showToast('Wystąpił błąd podczas generowania.', 'error');
+                                } finally {
+                                    setIsLoading(false);
+                                }
+                            }
+                        }}
+                    >
+                        Generuj Dane
+                    </Button>
+
                     <Button size="sm" onClick={() => setAddClientModalOpen(true)}>
                         Dodaj klienta
                     </Button>
                 </div>
             </div>
 
-            {!supabaseStatus && (
-                <div style={{
-                    marginBottom: '16px',
-                    padding: '12px',
-                    backgroundColor: '#fff3e0',
-                    borderRadius: '4px',
-                    fontSize: '14px',
-                    color: '#e65100'
-                }}>
-                    ⚠ Supabase nie jest skonfigurowane. Ustaw VITE_SUPABASE_URL i VITE_SUPABASE_ANON_KEY w pliku .env
-                </div>
-            )}
+            {/* Client List Content */}
+            {
+                !backendConfigured && (
+                    <div style={{
+                        marginBottom: '16px',
+                        padding: '12px',
+                        backgroundColor: '#fff3e0',
+                        borderRadius: '4px',
+                        fontSize: '14px',
+                        color: '#e65100'
+                    }}>
+                        ⚠ Firebase nie jest skonfigurowane. Ustaw VITE_FIREBASE_* w pliku .env
+                    </div>
+                )
+            }
 
-            {isLoading ? (
-                <div style={{ textAlign: 'center', padding: '40px' }}>
-                    <p>Ładowanie klientów...</p>
-                </div>
-            ) : (
-                <div className="table-container">
-                    <table className="client-table">
-                        <thead>
-                            <tr>
-                                <th>Klient</th>
-                                <th>Kontakt</th>
-                                <th>Status</th>
-                                <th>Data zgłoszenia</th>
-                                <th>Akcje</th>
-                            </tr>
-                        </thead>
-                        <tbody>
-                            {clients.length === 0 ? (
+            {
+                isLoading ? (
+                    <div style={{ textAlign: 'center', padding: '40px' }}>
+                        <p>Ładowanie klientów...</p>
+                    </div>
+                ) : (
+                    <div className="table-container">
+                        <table className="client-table">
+                            <thead>
                                 <tr>
-                                    <td colSpan={5} style={{ textAlign: 'center', padding: '40px' }}>
-                                        {supabaseStatus ? 'Brak klientów. Dodaj pierwszego klienta!' : 'Skonfiguruj Supabase, aby rozpocząć.'}
-                                    </td>
+                                    <th>Klient</th>
+                                    <th>Kontakt</th>
+                                    <th>Status</th>
+                                    <th>Data zgłoszenia</th>
+                                    <th>Akcje</th>
                                 </tr>
-                            ) : (
-                                clients.map((client) => (
-                                    <tr key={client.id}>
-                                        <td>
-                                            <div className="client-name">{client.name}</div>
-                                        </td>
-                                        <td>
-                                            <div className="client-email">{client.email}</div>
-                                            <div className="client-phone">{client.phone}</div>
-                                        </td>
-                                        <td>
-                                            <span className={`status-badge status-${client.status}`}>
-                                                {statusLabels[client.status]}
-                                            </span>
-                                        </td>
-                                        <td>{client.date}</td>
-                                        <td>
-                                            <div className="actions-cell" style={{ display: 'flex', gap: '8px', flexWrap: 'wrap' }}>
-                                                <Button
-                                                    variant="outline"
-                                                    size="sm"
-                                                    onClick={() => openSmsModal(client)}
-                                                    title="Wyślij SMS"
-                                                >
-                                                    💬 SMS
-                                                </Button>
-                                                <Button
-                                                    variant="outline"
-                                                    size="sm"
-                                                    onClick={() => handleEditClient(client)}
-                                                    title="Edytuj klienta"
-                                                >
-                                                    ✏️ Edytuj
-                                                </Button>
-                                                <Button
-                                                    variant="ghost"
-                                                    size="sm"
-                                                    onClick={() => handleDeleteClient(client.id, client.name)}
-                                                    title="Usuń klienta"
-                                                    style={{ color: '#d32f2f' }}
-                                                >
-                                                    🗑️ Usuń
-                                                </Button>
-                                                <Link to={`/dashboard/applications/${client.id}`}>
-                                                    <Button variant="ghost" size="sm">Szczegóły</Button>
-                                                </Link>
-                                            </div>
+                            </thead>
+                            <tbody>
+                                {clients.length === 0 ? (
+                                    <tr>
+                                        <td colSpan={5} style={{ textAlign: 'center', padding: '40px' }}>
+                                            {backendConfigured ? 'Brak klientów. Dodaj pierwszego klienta!' : 'Skonfiguruj Firebase, aby rozpocząć.'}
                                         </td>
                                     </tr>
-                                ))
-                            )}
-                        </tbody>
-                    </table>
-                </div>
-            )}
+                                ) : (
+                                    clients.map((client) => (
+                                        <tr key={client.id}>
+                                            <td>
+                                                <div className="client-name">
+                                                    {client.name}
+                                                    {client.user_id && (
+                                                        <span style={{
+                                                            marginLeft: '8px',
+                                                            fontSize: '11px',
+                                                            backgroundColor: '#e0f2f1',
+                                                            color: '#00695c',
+                                                            padding: '2px 6px',
+                                                            borderRadius: '12px',
+                                                            border: '1px solid #b2dfdb'
+                                                        }}>
+                                                            👤 Konto
+                                                        </span>
+                                                    )}
+                                                </div>
+                                            </td>
+                                            <td>
+                                                <div className="client-email">{client.email}</div>
+                                                <div className="client-phone">{client.phone}</div>
+                                            </td>
+                                            <td>
+                                                <span className={`status-badge status-${client.status}`}>
+                                                    {statusLabels[client.status]}
+                                                </span>
+                                            </td>
+                                            <td>{client.date}</td>
+                                            <td>
+                                                <div className="actions-cell" style={{ display: 'flex', gap: '8px', flexWrap: 'wrap' }}>
+                                                    <Button
+                                                        variant="outline"
+                                                        size="sm"
+                                                        onClick={() => openSmsModal(client)}
+                                                        title="Wyślij SMS"
+                                                    >
+                                                        💬 SMS
+                                                    </Button>
+                                                    <Button
+                                                        variant="outline"
+                                                        size="sm"
+                                                        onClick={() => handleEditClient(client)}
+                                                        title="Edytuj klienta"
+                                                    >
+                                                        ✏️ Edytuj
+                                                    </Button>
+                                                    <Button
+                                                        variant="ghost"
+                                                        size="sm"
+                                                        onClick={() => handleDeleteClient(client.id, client.name)}
+                                                        title="Usuń klienta"
+                                                        style={{ color: '#d32f2f' }}
+                                                    >
+                                                        🗑️ Usuń
+                                                    </Button>
+                                                    <Link to={`/dashboard/applications/${client.id}`}>
+                                                        <Button variant="ghost" size="sm">Szczegóły</Button>
+                                                    </Link>
+                                                </div>
+                                            </td>
+                                        </tr>
+                                    ))
+                                )}
+                            </tbody>
+                        </table>
+                    </div>
+                )
+            }
 
             {/* Add Client Modal */}
-            {addClientModalOpen && (
-                <div className="modal-overlay">
-                    <div className="sms-modal">
-                        <div className="sms-modal-header">
-                            <h3 className="sms-modal-title">Dodaj nowego klienta</h3>
-                            <button className="sms-modal-close" onClick={() => setAddClientModalOpen(false)}>&times;</button>
+            {
+                addClientModalOpen && (
+                    <div className="modal-overlay">
+                        <div className="sms-modal">
+                            <div className="sms-modal-header">
+                                <h3 className="sms-modal-title">Dodaj nowego klienta</h3>
+                                <button className="sms-modal-close" onClick={() => setAddClientModalOpen(false)}>&times;</button>
+                            </div>
+                            <form onSubmit={handleAddClient}>
+                                <div className="sms-modal-body">
+                                    <div style={{ marginBottom: '16px' }}>
+                                        <label style={{ display: 'block', marginBottom: '8px', fontSize: '14px', fontWeight: 500 }}>Imię i nazwisko</label>
+                                        <input
+                                            type="text"
+                                            className="sms-textarea"
+                                            style={{ height: '40px' }}
+                                            value={newClient.name}
+                                            onChange={e => setNewClient({ ...newClient, name: e.target.value })}
+                                            required
+                                            placeholder="np. Jan Kowalski"
+                                        />
+                                    </div>
+                                    <div style={{ marginBottom: '16px' }}>
+                                        <label style={{ display: 'block', marginBottom: '8px', fontSize: '14px', fontWeight: 500 }}>Email</label>
+                                        <input
+                                            type="email"
+                                            className="sms-textarea"
+                                            style={{ height: '40px' }}
+                                            value={newClient.email}
+                                            onChange={e => setNewClient({ ...newClient, email: e.target.value })}
+                                            required
+                                            placeholder="np. jan@example.com"
+                                        />
+                                    </div>
+                                    <div style={{ marginBottom: '16px' }}>
+                                        <label style={{ display: 'block', marginBottom: '8px', fontSize: '14px', fontWeight: 500 }}>Telefon</label>
+                                        <input
+                                            type="tel"
+                                            className="sms-textarea"
+                                            style={{ height: '40px' }}
+                                            value={newClient.phone}
+                                            onChange={e => setNewClient({ ...newClient, phone: e.target.value })}
+                                            required
+                                            placeholder="np. 500 123 456"
+                                        />
+                                    </div>
+                                </div>
+                                <div className="sms-modal-footer">
+                                    <Button type="button" variant="ghost" onClick={() => setAddClientModalOpen(false)}>Anuluj</Button>
+                                    <Button type="submit" variant="primary">Dodaj klienta</Button>
+                                </div>
+                            </form>
                         </div>
-                        <form onSubmit={handleAddClient}>
-                            <div className="sms-modal-body">
-                                <div style={{ marginBottom: '16px' }}>
-                                    <label style={{ display: 'block', marginBottom: '8px', fontSize: '14px', fontWeight: 500 }}>Imię i nazwisko</label>
-                                    <input
-                                        type="text"
-                                        className="sms-textarea"
-                                        style={{ height: '40px' }}
-                                        value={newClient.name}
-                                        onChange={e => setNewClient({ ...newClient, name: e.target.value })}
-                                        required
-                                        placeholder="np. Jan Kowalski"
-                                    />
-                                </div>
-                                <div style={{ marginBottom: '16px' }}>
-                                    <label style={{ display: 'block', marginBottom: '8px', fontSize: '14px', fontWeight: 500 }}>Email</label>
-                                    <input
-                                        type="email"
-                                        className="sms-textarea"
-                                        style={{ height: '40px' }}
-                                        value={newClient.email}
-                                        onChange={e => setNewClient({ ...newClient, email: e.target.value })}
-                                        required
-                                        placeholder="np. jan@example.com"
-                                    />
-                                </div>
-                                <div style={{ marginBottom: '16px' }}>
-                                    <label style={{ display: 'block', marginBottom: '8px', fontSize: '14px', fontWeight: 500 }}>Telefon</label>
-                                    <input
-                                        type="tel"
-                                        className="sms-textarea"
-                                        style={{ height: '40px' }}
-                                        value={newClient.phone}
-                                        onChange={e => setNewClient({ ...newClient, phone: e.target.value })}
-                                        required
-                                        placeholder="np. 500 123 456"
-                                    />
-                                </div>
-                            </div>
-                            <div className="sms-modal-footer">
-                                <Button type="button" variant="ghost" onClick={() => setAddClientModalOpen(false)}>Anuluj</Button>
-                                <Button type="submit" variant="primary">Dodaj klienta</Button>
-                            </div>
-                        </form>
                     </div>
-                </div>
-            )}
+                )
+            }
 
             {/* Edit Client Modal */}
-            {editClientModalOpen && editingClient && (
-                <div className="modal-overlay">
-                    <div className="sms-modal">
-                        <div className="sms-modal-header">
-                            <h3 className="sms-modal-title">Edytuj klienta</h3>
-                            <button className="sms-modal-close" onClick={closeEditModal}>&times;</button>
+            {
+                editClientModalOpen && editingClient && (
+                    <div className="modal-overlay">
+                        <div className="sms-modal">
+                            <div className="sms-modal-header">
+                                <h3 className="sms-modal-title">Edytuj klienta</h3>
+                                <button className="sms-modal-close" onClick={closeEditModal}>&times;</button>
+                            </div>
+                            <form onSubmit={handleUpdateClient}>
+                                <div className="sms-modal-body">
+                                    <div style={{ marginBottom: '16px' }}>
+                                        <label style={{ display: 'block', marginBottom: '8px', fontSize: '14px', fontWeight: 500 }}>Imię i nazwisko</label>
+                                        <input
+                                            type="text"
+                                            className="sms-textarea"
+                                            style={{ height: '40px' }}
+                                            value={newClient.name}
+                                            onChange={e => setNewClient({ ...newClient, name: e.target.value })}
+                                            required
+                                            placeholder="np. Jan Kowalski"
+                                        />
+                                    </div>
+                                    <div style={{ marginBottom: '16px' }}>
+                                        <label style={{ display: 'block', marginBottom: '8px', fontSize: '14px', fontWeight: 500 }}>Email</label>
+                                        <input
+                                            type="email"
+                                            className="sms-textarea"
+                                            style={{ height: '40px' }}
+                                            value={newClient.email}
+                                            onChange={e => setNewClient({ ...newClient, email: e.target.value })}
+                                            required
+                                            placeholder="np. jan@example.com"
+                                        />
+                                    </div>
+                                    <div style={{ marginBottom: '16px' }}>
+                                        <label style={{ display: 'block', marginBottom: '8px', fontSize: '14px', fontWeight: 500 }}>Telefon</label>
+                                        <input
+                                            type="tel"
+                                            className="sms-textarea"
+                                            style={{ height: '40px' }}
+                                            value={newClient.phone}
+                                            onChange={e => setNewClient({ ...newClient, phone: e.target.value })}
+                                            required
+                                            placeholder="np. 500 123 456"
+                                        />
+                                    </div>
+                                </div>
+                                <div className="sms-modal-footer">
+                                    <Button type="button" variant="ghost" onClick={closeEditModal}>Anuluj</Button>
+                                    <Button type="submit" variant="primary">Zapisz zmiany</Button>
+                                </div>
+                            </form>
                         </div>
-                        <form onSubmit={handleUpdateClient}>
-                            <div className="sms-modal-body">
-                                <div style={{ marginBottom: '16px' }}>
-                                    <label style={{ display: 'block', marginBottom: '8px', fontSize: '14px', fontWeight: 500 }}>Imię i nazwisko</label>
-                                    <input
-                                        type="text"
-                                        className="sms-textarea"
-                                        style={{ height: '40px' }}
-                                        value={newClient.name}
-                                        onChange={e => setNewClient({ ...newClient, name: e.target.value })}
-                                        required
-                                        placeholder="np. Jan Kowalski"
-                                    />
-                                </div>
-                                <div style={{ marginBottom: '16px' }}>
-                                    <label style={{ display: 'block', marginBottom: '8px', fontSize: '14px', fontWeight: 500 }}>Email</label>
-                                    <input
-                                        type="email"
-                                        className="sms-textarea"
-                                        style={{ height: '40px' }}
-                                        value={newClient.email}
-                                        onChange={e => setNewClient({ ...newClient, email: e.target.value })}
-                                        required
-                                        placeholder="np. jan@example.com"
-                                    />
-                                </div>
-                                <div style={{ marginBottom: '16px' }}>
-                                    <label style={{ display: 'block', marginBottom: '8px', fontSize: '14px', fontWeight: 500 }}>Telefon</label>
-                                    <input
-                                        type="tel"
-                                        className="sms-textarea"
-                                        style={{ height: '40px' }}
-                                        value={newClient.phone}
-                                        onChange={e => setNewClient({ ...newClient, phone: e.target.value })}
-                                        required
-                                        placeholder="np. 500 123 456"
-                                    />
-                                </div>
-                            </div>
-                            <div className="sms-modal-footer">
-                                <Button type="button" variant="ghost" onClick={closeEditModal}>Anuluj</Button>
-                                <Button type="submit" variant="primary">Zapisz zmiany</Button>
-                            </div>
-                        </form>
                     </div>
-                </div>
-            )}
+                )
+            }
 
             {/* SMS Modal */}
-            {smsModalOpen && selectedClient && (
-                <div className="modal-overlay">
-                    <div className="sms-modal">
-                        <div className="sms-modal-header">
-                            <h3 className="sms-modal-title">Wyślij SMS</h3>
-                            <button className="sms-modal-close" onClick={closeSmsModal} disabled={isSending}>&times;</button>
-                        </div>
-                        <div className="sms-modal-body">
-                            <div className="sms-recipient">
-                                Do: <strong>{selectedClient.name}</strong> ({selectedClient.phone})
+            {
+                smsModalOpen && selectedClient && (
+                    <div className="modal-overlay">
+                        <div className="sms-modal">
+                            <div className="sms-modal-header">
+                                <h3 className="sms-modal-title">Wyślij SMS</h3>
+                                <button className="sms-modal-close" onClick={closeSmsModal} disabled={isSending}>&times;</button>
                             </div>
-                            <textarea
-                                className="sms-textarea"
-                                value={smsMessage}
-                                onChange={(e) => setSmsMessage(e.target.value)}
-                                placeholder="Wpisz treść wiadomości..."
-                                disabled={isSending}
-                            />
-                            <div className="sms-info">
-                                <span>Liczba znaków: {smsMessage.length}</span>
-                                <span>Koszt: 0.16 zł</span>
-                            </div>
-                            {smsStatus && (
-                                <div style={{
-                                    marginTop: '12px',
-                                    padding: '8px 12px',
-                                    backgroundColor: smsStatus.configured ? '#e8f5e9' : '#fff3e0',
-                                    borderRadius: '4px',
-                                    fontSize: '12px',
-                                    color: smsStatus.configured ? '#2e7d32' : '#e65100'
-                                }}>
-                                    {smsStatus.configured ? (
-                                        <>✓ SMSAPI.pl skonfigurowane - wiadomości będą wysyłane</>
-                                    ) : (
-                                        <>⚠ Tryb testowy (mock) - SMS-y nie są wysyłane. Skonfiguruj VITE_SMSAPI_TOKEN w pliku .env</>
-                                    )}
+                            <div className="sms-modal-body">
+                                <div className="sms-recipient">
+                                    Do: <strong>{selectedClient.name}</strong> ({selectedClient.phone})
                                 </div>
-                            )}
-                        </div>
-                        <div className="sms-modal-footer">
-                            <Button variant="ghost" onClick={closeSmsModal} disabled={isSending}>Anuluj</Button>
-                            <Button variant="primary" onClick={handleSendSms} disabled={isSending}>
-                                {isSending ? 'Wysyłanie...' : 'Wyślij wiadomość'}
-                            </Button>
+                                <textarea
+                                    className="sms-textarea"
+                                    value={smsMessage}
+                                    onChange={(e) => setSmsMessage(e.target.value)}
+                                    placeholder="Wpisz treść wiadomości..."
+                                    disabled={isSending}
+                                />
+                                <div className="sms-info">
+                                    <span>Liczba znaków: {smsMessage.length}</span>
+                                    <span>Koszt: 0.16 zł</span>
+                                </div>
+                                {smsStatus && (
+                                    <div style={{
+                                        marginTop: '12px',
+                                        padding: '8px 12px',
+                                        backgroundColor: smsStatus.configured ? '#e8f5e9' : '#fff3e0',
+                                        borderRadius: '4px',
+                                        fontSize: '12px',
+                                        color: smsStatus.configured ? '#2e7d32' : '#e65100'
+                                    }}>
+                                        {smsStatus.configured ? (
+                                            <>✓ SMSAPI.pl skonfigurowane - wiadomości będą wysyłane</>
+                                        ) : (
+                                            <>⚠ Tryb testowy (mock) - SMS-y nie są wysyłane. Skonfiguruj VITE_SMSAPI_TOKEN w pliku .env</>
+                                        )}
+                                    </div>
+                                )}
+                            </div>
+                            <div className="sms-modal-footer">
+                                <Button variant="ghost" onClick={closeSmsModal} disabled={isSending}>Anuluj</Button>
+                                <Button variant="primary" onClick={handleSendSms} disabled={isSending}>
+                                    {isSending ? 'Wysyłanie...' : 'Wyślij wiadomość'}
+                                </Button>
+                            </div>
                         </div>
                     </div>
-                </div>
-            )}
-        </div>
+                )
+            }
+        </div >
     );
 };

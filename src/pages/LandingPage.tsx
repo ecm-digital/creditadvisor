@@ -5,7 +5,7 @@ import { Features } from '../components/landing/Features';
 import { Process } from '../components/landing/Process';
 import { Testimonials } from '../components/landing/Testimonials';
 import { LeadMagnet } from '../components/landing/LeadMagnet';
-import { CreditCalculator } from '../components/calculator/CreditCalculator';
+import { CreditConfigurator } from '../components/calculator/CreditConfigurator';
 import { FAQ } from '../components/landing/FAQ';
 import { LeadForm } from '../components/landing/LeadForm';
 
@@ -19,7 +19,21 @@ export const LandingPage: React.FC = () => {
                 <Process />
                 <Testimonials />
                 <LeadMagnet />
-                <CreditCalculator />
+
+                <section id="calculator" style={{ padding: '4rem 1rem', background: '#f8fafc' }}>
+                    <div className="container" style={{ maxWidth: '1200px', margin: '0 auto' }}>
+                        <div style={{ textAlign: 'center', marginBottom: '3rem' }}>
+                            <h2 style={{ fontSize: '2.5rem', marginBottom: '1rem', color: '#1a202c' }}>
+                                Stwórz ranking kredytów
+                            </h2>
+                            <p style={{ fontSize: '1.2rem', color: '#718096' }}>
+                                Wybierz cel i dowiedz się, na co Cię stać
+                            </p>
+                        </div>
+                        <CreditConfigurator />
+                    </div>
+                </section>
+
                 <FAQ />
                 <LeadForm />
             </main>
