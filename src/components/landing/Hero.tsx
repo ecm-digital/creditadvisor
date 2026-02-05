@@ -1,4 +1,5 @@
 import React, { useState } from 'react';
+import tomaszPhoto from '../../assets/zdjecietomasza.jpg';
 import { Button } from '../ui/Button';
 import { ConsultationModal } from './ConsultationModal';
 import './Hero.css';
@@ -36,16 +37,16 @@ export const Hero: React.FC = () => {
                     <div className="hero__text">
                         <div className="hero__badge">
                             <span className="hero__badge-dot"></span>
-                            Zaufało nam ponad 500 klientów
+                            Zaufało mi ponad 500 klientów
                         </div>
 
                         <h1 className="hero__title">
-                            Znajdziemy dla Ciebie
-                            <span className="gradient-text"> najlepszy kredyt</span>
+                            Twój zaufany ekspert
+                            <span className="gradient-text"> finansowy</span>
                         </h1>
 
                         <p className="hero__description">
-                            Profesjonalne doradztwo kredytowe. Pomagamy uzyskać najlepsze warunki
+                            Profesjonalne doradztwo kredytowe. Pomagam uzyskać najlepsze warunki
                             finansowania na rynku. Bezpłatna analiza zdolności kredytowej.
                         </p>
 
@@ -54,7 +55,7 @@ export const Hero: React.FC = () => {
                                 Odbierz darmowy poradnik
                             </Button>
                             <Button variant="outline" size="lg" onClick={scrollToCalculator}>
-                                Sprawdź zdolność kredytową
+                                Stwórz ranking kredytów
                             </Button>
                         </div>
 
@@ -75,30 +76,12 @@ export const Hero: React.FC = () => {
                     </div>
 
                     <div className="hero__visual">
-                        <div className="hero__card">
-                            <div className="hero__card-header">
-                                <div className="hero__card-icon">🏠</div>
-                                <span>Kredyt hipoteczny</span>
-                            </div>
-                            <div className="hero__card-amount">450 000 zł</div>
-                            <div className="hero__card-details">
-                                <div className="hero__card-row">
-                                    <span>Oprocentowanie</span>
-                                    <strong>7.2%</strong>
-                                </div>
-                                <div className="hero__card-row">
-                                    <span>Rata miesięczna</span>
-                                    <strong>3 240 zł</strong>
-                                </div>
-                                <div className="hero__card-row">
-                                    <span>Okres</span>
-                                    <strong>25 lat</strong>
-                                </div>
-                            </div>
-                            <div className="hero__card-status">
-                                <span className="hero__card-status-dot"></span>
-                                Wstępna akceptacja
-                            </div>
+                        <div className="hero__image-container">
+                            <img
+                                src={tomaszPhoto}
+                                alt="Tomasz Blachliński - Ekspert Finansowy"
+                                className="hero__image"
+                            />
                         </div>
 
                         <div className="hero__float hero__float--1">
