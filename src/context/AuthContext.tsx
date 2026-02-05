@@ -11,6 +11,8 @@ interface AuthContextType {
     signIn: (email: string, password: string) => Promise<{ error: any }>;
     signOut: () => Promise<void>;
     resetPassword: (email: string) => Promise<{ error: any }>;
+    sendLoginCode: (phone: string) => Promise<{ success: boolean; error: any }>;
+    signInWithPhone: (phone: string, code: string) => Promise<{ success: boolean; error: any }>;
 }
 
 const AuthContext = createContext<AuthContextType | undefined>(undefined);
@@ -90,6 +92,51 @@ export const AuthProvider: React.FC<AuthProviderProps> = ({ children }) => {
         }
     };
 
+    const sendLoginCode = async (phone: string) => {
+        try {
+            const functionUrl = 'https://requestsmscode-cy3aptk6fq-ew.a.run.app';
+            const response = await fetch(functionUrl, {
+                method: 'POST',
+                headers: { 'Content-Type': 'application/json' },
+                body: JSON.stringify({ phoneNumber: phone }),
+            });
+            const data = await response.json();
+            if (!response.ok) {
+                return { success: false, error: data.error || 'Failed to send code' };
+            }
+            return { success: true, error: null };
+        } catch (error: any) {
+            return { success: false, error: error.message };
+        }
+    };
+
+    const signInWithPhone = async (phone: string, code: string) => {
+        try {
+            const functionUrl = 'https://verifysmscode-cy3aptk6fq-ew.a.run.app';
+            const response = await fetch(functionUrl, {
+                method: 'POST',
+                headers: { 'Content-Type': 'application/json' },
+                body: JSON.stringify({ phoneNumber: phone, code }),
+            });
+            const data = await response.json();
+
+            if (!response.ok) {
+                return { success: false, error: data.error || 'Verification failed' };
+            }
+
+            if (data.token) {
+                const { signInWithCustomToken } = await import('firebase/auth');
+                await signInWithCustomToken(auth, data.token);
+                return { success: true, error: null };
+            }
+
+            return { success: false, error: 'No token received' };
+
+        } catch (error: any) {
+            return { success: false, error: error.message };
+        }
+    };
+
     const value = {
         user,
         loading,
@@ -97,6 +144,8 @@ export const AuthProvider: React.FC<AuthProviderProps> = ({ children }) => {
         signIn,
         signOut,
         resetPassword,
+        sendLoginCode,
+        signInWithPhone,
     };
 
     return <AuthContext.Provider value={value}>{children}</AuthContext.Provider>;

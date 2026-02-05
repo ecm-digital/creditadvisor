@@ -24,7 +24,7 @@ interface SmsApiResponse {
 // Configuration
 // Use proxy in both dev and prod to avoid CORS issues
 // Use Firebase Function proxy
-const SMSAPI_URL = 'https://europe-west1-blachlinskikredyty.cloudfunctions.net/sendSms';
+const SMSAPI_URL = 'https://sendsms-cy3aptk6fq-ew.a.run.app';
 const SMSAPI_TOKEN = import.meta.env.VITE_SMSAPI_TOKEN || '';
 const USE_MOCK = import.meta.env.VITE_SMSAPI_USE_MOCK === 'true';
 

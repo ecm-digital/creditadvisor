@@ -7,15 +7,43 @@ import './LoginPage.css';
 
 export const LoginPage: React.FC = () => {
     const navigate = useNavigate();
-    const { signIn, resetPassword } = useAuth();
+    const { signIn, signInWithPhone, sendLoginCode, resetPassword } = useAuth();
     const { showToast } = useToast();
-    const [email, setEmail] = useState('');
-    const [password, setPassword] = useState('');
+    const [loginIdentifier, setLoginIdentifier] = useState(''); // Email (admin) or Phone (client)
+    const [password, setPassword] = useState(''); // Password (admin) or SMS Code (client)
     const [error, setError] = useState('');
     const [loading, setLoading] = useState(false);
-    const [showResetPassword, setShowResetPassword] = useState(false);
+
+    // SMS Login State
+    const [isPhoneLogin, setIsPhoneLogin] = useState(false); // True if pure digits detected
+    const [codeSent, setCodeSent] = useState(false);
+
+    const [showResetPassword, setShowResetPassword] = useState(false); // Only for email/admin
     const [resetEmail, setResetEmail] = useState('');
     const [resetLoading, setResetLoading] = useState(false);
+
+    // Detect if input is phone number
+    const handleIdentifierChange = (e: React.ChangeEvent<HTMLInputElement>) => {
+        const val = e.target.value;
+        setLoginIdentifier(val);
+        // If it looks like a phone number (only digits, spaces, plus), treat as phone login
+        const isPhone = /^[\d\s+]*$/.test(val) && val.length > 3;
+        setIsPhoneLogin(isPhone);
+    };
+
+    const handleSendCode = async () => {
+        setError('');
+        setLoading(true);
+        const { success, error } = await sendLoginCode(loginIdentifier);
+        setLoading(false);
+
+        if (success) {
+            setCodeSent(true);
+            showToast('Kod SMS został wysłany', 'success');
+        } else {
+            setError(typeof error === 'string' ? error : 'Błąd wysyłania kodu');
+        }
+    };
 
     const handleLogin = async (e: React.FormEvent) => {
         e.preventDefault();
@@ -23,55 +51,38 @@ export const LoginPage: React.FC = () => {
         setLoading(true);
 
         try {
-            // Check if input is an email (for admin) or phone (for client)
-            let loginId = email;
-            // Phone login
-            if (!email.includes('@')) {
-                // Assume phone number -> convert to dummy email
-                const cleanPhone = email.replace(/\D/g, '');
-                loginId = `${cleanPhone}@kredyt.pl`;
-            }
-
-            const { error } = await signIn(loginId, password);
-
-            if (error) {
-                if (error.message.includes('Invalid login credentials')) {
-                    setError('Nieprawidłowy numer/email lub hasło');
-                } else if (error.message.includes('Email not confirmed')) {
-                    setError('Konto nieaktywne');
-                } else {
-                    setError('Błąd logowania. Sprawdź kod.');
+            if (isPhoneLogin) {
+                // SMS LOGIN FLOW
+                if (!codeSent) {
+                    // Should trigger send code, but button is separate usually.
+                    // But if they hit enter? Let's just warn or trigger send.
+                    await handleSendCode();
+                    return;
                 }
+
+                const { success, error } = await signInWithPhone(loginIdentifier, password);
+                if (success) {
+                    showToast('Zalogowano pomyślnie', 'success');
+                    navigate('/dashboard');
+                } else {
+                    setError(typeof error === 'string' ? error : 'Błąd weryfikacji kodu');
+                }
+
             } else {
-                showToast('Zalogowano pomyślnie', 'success');
-                navigate('/dashboard');
+                // EMAIL/PASSWORD LOGIN FLOW (Admin)
+                const { error } = await signIn(loginIdentifier, password);
+                if (error) {
+                    setError('Błąd logowania. Sprawdź email i hasło.');
+                } else {
+                    showToast('Zalogowano pomyślnie', 'success');
+                    navigate('/dashboard');
+                }
             }
         } catch (err) {
             setError('Wystąpił nieoczekiwany błąd');
             console.error('Login error:', err);
         } finally {
             setLoading(false);
-        }
-    };
-
-    const handleResetPassword = async (e: React.FormEvent) => {
-        e.preventDefault();
-        setError('');
-        setResetLoading(true);
-
-        try {
-            const { error } = await resetPassword(resetEmail);
-            if (error) {
-                setError(error.message || 'Błąd podczas resetowania hasła');
-            } else {
-                showToast('Link do resetowania hasła został wysłany na email', 'success');
-                setShowResetPassword(false);
-                setResetEmail('');
-            }
-        } catch (err) {
-            setError('Wystąpił nieoczekiwany błąd');
-        } finally {
-            setResetLoading(false);
         }
     };
 
@@ -85,38 +96,76 @@ export const LoginPage: React.FC = () => {
 
                 <form className="login-form" onSubmit={handleLogin}>
                     {error && <div className="login-error">{error}</div>}
+
                     <div className="form-group">
-                        <label htmlFor="loginId">Numer telefonu</label>
+                        <label htmlFor="loginId">Email (Admin) lub Telefon (Klient)</label>
                         <input
-                            type="tel"
+                            type="text"
                             id="loginId"
-                            value={email}
-                            onChange={(e) => setEmail(e.target.value)}
-                            placeholder="np. 500123456"
+                            value={loginIdentifier}
+                            onChange={handleIdentifierChange}
+                            placeholder="np. 500123456 lub admin@kredyt.pl"
                             required
+                            disabled={codeSent && isPhoneLogin}
                         />
                     </div>
-                    <div className="form-group">
-                        <label htmlFor="password">Kod dostępu (z SMS)</label>
-                        <input
-                            type="password"
-                            id="password"
-                            value={password}
-                            onChange={(e) => setPassword(e.target.value)}
-                            placeholder="Wpisz kod z SMS"
-                            required
-                        />
-                    </div>
-                    <Button type="submit" fullWidth size="lg" disabled={loading}>
-                        {loading ? 'Logowanie...' : 'Zaloguj się'}
-                    </Button>
+
+                    {isPhoneLogin && !codeSent && (
+                        <Button
+                            type="button"
+                            fullWidth
+                            size="lg"
+                            onClick={handleSendCode}
+                            disabled={loading || loginIdentifier.length < 9}
+                            className="mb-4"
+                        >
+                            {loading ? 'Wysyłanie...' : 'Wyślij kod SMS'}
+                        </Button>
+                    )}
+
+                    {(!isPhoneLogin || (isPhoneLogin && codeSent)) && (
+                        <div className="form-group">
+                            <label htmlFor="password">
+                                {isPhoneLogin ? 'Kod weryfikacyjny (SMS)' : 'Hasło'}
+                            </label>
+                            <input
+                                type="password"
+                                id="password"
+                                value={password}
+                                onChange={(e) => setPassword(e.target.value)}
+                                placeholder={isPhoneLogin ? "123456" : "Twoje hasło"}
+                                required
+                            />
+                        </div>
+                    )}
+
+                    {(!isPhoneLogin || (isPhoneLogin && codeSent)) && (
+                        <Button type="submit" fullWidth size="lg" disabled={loading}>
+                            {loading ? 'Logowanie...' : 'Zaloguj się'}
+                        </Button>
+                    )}
+
+                    {isPhoneLogin && codeSent && (
+                        <div style={{ textAlign: 'center', marginTop: '10px' }}>
+                            <button
+                                type="button"
+                                className="text-sm underline text-gray-500"
+                                onClick={() => { setCodeSent(false); setPassword(''); }}
+                            >
+                                Zmień numer / Wyślij ponownie
+                            </button>
+                        </div>
+                    )}
+
                 </form>
                 <div className="login-footer">
                     {!showResetPassword ? (
                         <>
-                            <a href="#" onClick={(e) => { e.preventDefault(); setShowResetPassword(true); }} className="forgot-password">
-                                Zapomniałeś hasła?
-                            </a>
+                            {!isPhoneLogin && (
+                                <a href="#" onClick={(e) => { e.preventDefault(); setShowResetPassword(true); }} className="forgot-password">
+                                    Zapomniałeś hasła?
+                                </a>
+                            )}
                             <p style={{ marginTop: '16px' }}>
                                 Nie masz konta? <Link to="/register">Zarejestruj się</Link>
                             </p>
