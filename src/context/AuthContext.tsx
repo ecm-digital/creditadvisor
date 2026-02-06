@@ -3,11 +3,12 @@ import { onAuthStateChanged, signInWithEmailAndPassword, createUserWithEmailAndP
 import type { User } from 'firebase/auth';
 import { collection, addDoc } from 'firebase/firestore';
 import { auth, db } from '../lib/firebase';
+import { normalizePhone } from '../utils/authUtils';
 
 interface AuthContextType {
     user: User | null;
     loading: boolean;
-    signUp: (email: string, password: string, name: string, phone: string) => Promise<{ error: any }>;
+    signUp: (email: string, password: string, name: string, phone: string, additionalData?: any) => Promise<{ error: any }>;
     signIn: (email: string, password: string) => Promise<{ error: any }>;
     signOut: () => Promise<void>;
     resetPassword: (email: string) => Promise<{ error: any }>;
@@ -42,25 +43,33 @@ export const AuthProvider: React.FC<AuthProviderProps> = ({ children }) => {
         return () => unsubscribe();
     }, []);
 
-    const signUp = async (email: string, password: string, name: string, phone: string) => {
+    const signUp = async (email: string, password: string, name: string, phone: string, additionalData: any = {}) => {
         try {
             const userCredential = await createUserWithEmailAndPassword(auth, email, password);
             const user = userCredential.user;
 
             // Create client record in Firestore
+            const cleanPhone = normalizePhone(phone);
             if (user) {
                 try {
                     await addDoc(collection(db, 'clients'), {
                         user_id: user.uid,
                         name,
                         email: email.toLowerCase(),
-                        phone,
+                        phone: cleanPhone,
                         status: 'new',
                         date: new Date().toISOString().split('T')[0],
                         created_at: new Date().toISOString(),
+                        ...additionalData // Spread rich data (amount, purpose, etc.)
                     });
-                } catch (err) {
+
+                    // Log registration
+                    const { activityService } = await import('../services/activityService');
+                    await activityService.logActivity(user.uid, 'login', 'Zarejestrowano nowe konto klienta');
+                } catch (err: any) {
                     console.error('Error creating client record:', err);
+                    // Return this error so the UI knows DB write failed
+                    return { error: { code: 'firestore-error', message: 'Konto utworzone, ale błąd zapisu danych: ' + err.message } };
                 }
             }
 
@@ -94,11 +103,12 @@ export const AuthProvider: React.FC<AuthProviderProps> = ({ children }) => {
 
     const sendLoginCode = async (phone: string) => {
         try {
+            const cleanPhone = normalizePhone(phone);
             const functionUrl = 'https://requestsmscode-cy3aptk6fq-ew.a.run.app';
             const response = await fetch(functionUrl, {
                 method: 'POST',
                 headers: { 'Content-Type': 'application/json' },
-                body: JSON.stringify({ phoneNumber: phone }),
+                body: JSON.stringify({ phoneNumber: cleanPhone }),
             });
             const data = await response.json();
             if (!response.ok) {

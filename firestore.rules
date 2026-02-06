@@ -1,0 +1,22 @@
+rules_version = '2';
+service cloud.firestore {
+  match /databases/{database}/documents {
+    match /clients/{clientId} {
+      // Allow public access for now as per user request (Advisor Panel without login)
+      allow read, write: if true;
+    }
+    match /sms_codes/{document=**} {
+      // Only generic access via Admin SDK (Cloud Functions)
+      allow read, write: if false; 
+    }
+    match /offers/{offerId} {
+      allow read, write: if true;
+    }
+    match /applications/{applicationId} {
+      allow read, write: if true;
+    }
+    match /activities/{activityId} {
+      allow read, write: if true;
+    }
+  }
+}

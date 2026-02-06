@@ -12,6 +12,12 @@ export interface Client {
     created_at?: string;
     updated_at?: string;
     user_id?: string;
+    // Loan Details
+    purpose?: string;
+    amount?: number;
+    period?: number;
+    age?: number;
+    incomeType?: string;
 }
 
 export const clientService = {
@@ -19,27 +25,23 @@ export const clientService = {
      * Get all clients
      */
     async getAll(): Promise<Client[]> {
+        // ... (rest is same, skipping lines for brevity if not changing) -> Wait, I need to match the file structure.
+        // Actually, replace_file_content replaces a block. I will replace the Interface and create method.
         try {
             console.log('[ClientService] Fetching clients from Firestore...');
 
             const clientsCollection = collection(db, 'clients');
-            // Note: orderBy might require an index in Firestore if combined with filter, 
-            // but simple ordering on 'created_at' should work if field exists. 
-            // If 'created_at' is missing on some docs, it might exclude them or warn.
-            // Using 'date' as a fallback or just default order.
-            // Let's try to order by created_at desc.
             const q = query(clientsCollection, orderBy('created_at', 'desc'));
 
             const querySnapshot = await getDocs(q).catch((err) => {
-                // Fallback if index missing or field missing, try without sort or handle error
                 console.warn('[ClientService] Sort failed, fetching unordered', err);
                 return getDocs(clientsCollection);
             });
 
-            const clients: Client[] = querySnapshot.docs.map(doc => ({
-                id: doc.id,
-                ...doc.data()
-            } as Client));
+            const clients: Client[] = querySnapshot.docs
+                .map(doc => ({ id: doc.id, ...doc.data() } as any))
+                .filter(doc => doc.type !== 'system') // Filter out system docs like GLOBAL_OFFERS
+                .map(doc => doc as Client);
 
             console.log('[ClientService] Successfully fetched', clients.length, 'clients');
             return clients;
@@ -74,7 +76,7 @@ export const clientService = {
      */
     async create(client: Omit<Client, 'id' | 'created_at' | 'updated_at'>): Promise<Client> {
         try {
-            const newClientData = {
+            const newClientData: any = {
                 name: client.name.trim(),
                 email: client.email.trim().toLowerCase(),
                 phone: client.phone.trim(),
@@ -83,6 +85,14 @@ export const clientService = {
                 created_at: new Date().toISOString(),
                 updated_at: new Date().toISOString()
             };
+
+            // Optional fields
+            if (client.purpose) newClientData.purpose = client.purpose;
+            if (client.amount) newClientData.amount = client.amount;
+            if (client.period) newClientData.period = client.period;
+            if (client.age) newClientData.age = client.age;
+            if (client.incomeType) newClientData.incomeType = client.incomeType;
+            if (client.user_id) newClientData.user_id = client.user_id;
 
             const docRef = await addDoc(collection(db, 'clients'), newClientData);
 

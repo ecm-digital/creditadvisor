@@ -1,23 +1,27 @@
 import React from 'react';
-import { Link, useNavigate } from 'react-router-dom';
+import { Link, useNavigate, useSearchParams } from 'react-router-dom';
 import { useAuth } from '../../context/AuthContext';
 import { useToast } from '../../context/ToastContext';
+import { ClientProcessSidebar } from './ClientProcessSidebar';
 import './DashboardLayout.css';
 
 interface DashboardLayoutProps {
     children: React.ReactNode;
 }
 
+import { isAdvisorEmail } from '../../utils/authUtils';
+
 export const DashboardLayout: React.FC<DashboardLayoutProps> = ({ children }) => {
     const { user, signOut } = useAuth();
     const { showToast } = useToast();
     const navigate = useNavigate();
+    const [searchParams] = useSearchParams();
 
     const handleLogout = async () => {
         try {
             await signOut();
             showToast('Wylogowano pomyślnie', 'success');
-            navigate('/login');
+            navigate('/');
         } catch (error) {
             console.error('Logout error:', error);
             showToast('Błąd podczas wylogowywania', 'error');
@@ -39,7 +43,13 @@ export const DashboardLayout: React.FC<DashboardLayoutProps> = ({ children }) =>
         return user.displayName || user.email || 'Doradca';
     };
 
-    const isClient = user?.email?.endsWith('@kredyt.pl');
+    // Fix: @kredyt.pl domain is for ADVISORS. Everyone else is a Client.
+    // UNLESS ?view=advisor is present (forced advisor mode)
+    const forceAdvisorView = searchParams.get('view') === 'advisor';
+    const email = user?.email;
+
+    const isAdvisor = forceAdvisorView || isAdvisorEmail(email);
+    const isClient = !isAdvisor;
 
     return (
         <div className="dashboard-layout">
@@ -52,14 +62,13 @@ export const DashboardLayout: React.FC<DashboardLayoutProps> = ({ children }) =>
                         <>
                             <Link to="/dashboard" className="sidebar-link">Klienci</Link>
                             <Link to="/dashboard/applications" className="sidebar-link">Wnioski</Link>
+                            <Link to="/dashboard/offers-manager" className="sidebar-link">Baza Ofert</Link>
                             <Link to="/dashboard/calendar" className="sidebar-link">Kalendarz</Link>
                             <Link to="/dashboard/settings" className="sidebar-link">Ustawienia</Link>
                         </>
                     )}
                     {isClient && (
-                        <div style={{ padding: '12px', color: '#64748b', fontSize: '14px' }}>
-                            Witaj w panelu klienta. Tutaj sprawdzisz przygotowane oferty.
-                        </div>
+                        <ClientProcessSidebar />
                     )}
                 </nav>
                 <div className="sidebar-footer">

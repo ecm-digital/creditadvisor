@@ -17,6 +17,30 @@ const faqs = [
     {
         question: 'Ile czasu trwa uzyskanie kredytu hipotecznego?',
         answer: 'Cały proces – od złożenia wniosku do wypłaty środków – trwa zazwyczaj od 4 do 8 tygodni. Wiele zależy od wybranego banku oraz poprawności przygotowanej dokumentacji.'
+    },
+    {
+        question: 'Jak sprawdzić swoją zdolność kredytową?',
+        answer: 'Podczas bezpłatnej konsultacji przeprowadzam szczegółową analizę Twoich dochodów, wydatków i zobowiązań. Następnie obliczam zdolność kredytową według aktualnych kryteriów banków. Otrzymasz jasną informację, na jaką kwotę możesz liczyć.'
+    },
+    {
+        question: 'Czy mogę wziąć kredyt hipoteczny bez wkładu własnego?',
+        answer: 'Tak, niektóre banki oferują kredyty hipoteczne do 100% wartości nieruchomości, zwłaszcza w programach rządowych (np. Bezpieczny Kredyt 2%). Pomogę Ci znaleźć najlepszą opcję dla Twojej sytuacji.'
+    },
+    {
+        question: 'Co to jest konsolidacja kredytów i czy się opłaca?',
+        answer: 'Konsolidacja to połączenie kilku kredytów w jeden, często z niższą ratą miesięczną. Opłaca się, gdy zmniejszasz całkowity koszt obsługi długu lub poprawiasz płynność finansową. Analizuję każdy przypadek indywidualnie.'
+    },
+    {
+        question: 'Czy jako osoba samozatrudniona mogę dostać kredyt hipoteczny?',
+        answer: 'Oczywiście! Współpracuję z bankami, które mają specjalne programy dla przedsiębiorców. Pomogę przygotować dokumentację (PIT, deklaracje ZUS/US) tak, aby maksymalizować Twoją zdolność kredytową.'
+    },
+    {
+        question: 'Jakie jest obecnie oprocentowanie kredytów hipotecznych?',
+        answer: 'Oprocentowanie zmienia się dynamicznie i zależy od wielu czynników (wkład własny, okres kredytowania, Twoja zdolność). Obecnie wahają się od około 7% do 9%. Podczas konsultacji przedstawię Ci aktualne oferty dopasowane do Twojej sytuacji.'
+    },
+    {
+        question: 'Czy negatywny wpis w BIK wyklucza możliwość wzięcia kredytu?',
+        answer: 'Nie zawsze. Zależy od rodzaju wpisu i Twojej aktualnej sytuacji finansowej. Mam doświadczenie w pracy z trudnymi przypadkami i znam banki, które są bardziej elastyczne w ocenie historii kredytowej.'
     }
 ];
 

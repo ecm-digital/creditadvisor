@@ -1,4 +1,6 @@
 import React from 'react';
+import { FileText, CheckCircle, Banknote, Users, ArrowUpRight, ArrowDownRight } from 'lucide-react';
+import '../../styles/advisor-design-system.css';
 import './DashboardStats.css';
 
 interface StatCardProps {
@@ -6,52 +8,100 @@ interface StatCardProps {
     value: string;
     change: string;
     isPositive: boolean;
-    icon: string;
+    icon: React.ReactNode;
+    color: 'blue' | 'green' | 'amber' | 'purple';
 }
 
-const StatCard: React.FC<StatCardProps> = ({ title, value, change, isPositive, icon }) => (
-    <div className="stat-card">
-        <div className="stat-icon">{icon}</div>
-        <div className="stat-content">
-            <h3 className="stat-title">{title}</h3>
-            <div className="stat-value">{value}</div>
-            <div className={`stat-change ${isPositive ? 'positive' : 'negative'}`}>
-                {isPositive ? '↑' : '↓'} {change} <span className="stat-period">vs ubiegły msc.</span>
+const colorMap = {
+    blue: {
+        bg: 'bg-blue-50',
+        text: 'text-blue-600',
+        border: 'border-blue-200',
+        gradient: 'from-blue-500 to-blue-600'
+    },
+    green: {
+        bg: 'bg-emerald-50',
+        text: 'text-emerald-600',
+        border: 'border-emerald-200',
+        gradient: 'from-emerald-500 to-emerald-600'
+    },
+    amber: {
+        bg: 'bg-amber-50',
+        text: 'text-amber-600',
+        border: 'border-amber-200',
+        gradient: 'from-amber-500 to-amber-600'
+    },
+    purple: {
+        bg: 'bg-purple-50',
+        text: 'text-purple-600',
+        border: 'border-purple-200',
+        gradient: 'from-purple-500 to-purple-600'
+    }
+};
+
+const StatCard: React.FC<StatCardProps> = ({ title, value, change, isPositive, icon, color }) => {
+    const colors = colorMap[color];
+
+    return (
+        <div className="stat-card-modern advisor-fade-in">
+            <div className="stat-card-header">
+                <div className={`stat-icon-modern ${colors.bg}`}>
+                    <div className={colors.text}>
+                        {icon}
+                    </div>
+                </div>
+                <div className={`stat-trend ${isPositive ? 'trend-positive' : 'trend-negative'}`}>
+                    {isPositive ? <ArrowUpRight size={16} /> : <ArrowDownRight size={16} />}
+                    <span>{change}</span>
+                </div>
             </div>
+
+            <div className="stat-content-modern">
+                <h3 className="stat-title-modern">{title}</h3>
+                <div className="stat-value-modern">{value}</div>
+                <p className="stat-subtitle">vs poprzedni miesiąc</p>
+            </div>
+
+            {/* Subtle gradient overlay on hover */}
+            <div className="stat-card-overlay"></div>
         </div>
-    </div>
-);
+    );
+};
 
 export const DashboardStats: React.FC = () => {
     return (
-        <div className="dashboard-stats">
+        <div className="dashboard-stats-modern">
             <StatCard
                 title="Wnioski w toku"
                 value="12"
-                change="20%"
+                change="+20%"
                 isPositive={true}
-                icon="📄"
+                icon={<FileText size={24} strokeWidth={2} />}
+                color="blue"
             />
             <StatCard
                 title="Udzielone kredyty"
                 value="8"
-                change="15%"
+                change="+15%"
                 isPositive={true}
-                icon="✅"
+                icon={<CheckCircle size={24} strokeWidth={2} />}
+                color="green"
             />
             <StatCard
-                title="Wartość kredytów"
+                title="Wartość portfela"
                 value="2.4M PLN"
-                change="5%"
+                change="+5%"
                 isPositive={true}
-                icon="💰"
+                icon={<Banknote size={24} strokeWidth={2} />}
+                color="amber"
             />
             <StatCard
                 title="Nowi klienci"
                 value="24"
-                change="2"
+                change="-2%"
                 isPositive={false}
-                icon="👥"
+                icon={<Users size={24} strokeWidth={2} />}
+                color="purple"
             />
         </div>
     );

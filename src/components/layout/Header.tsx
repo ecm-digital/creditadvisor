@@ -36,6 +36,31 @@ export const Header: React.FC = () => {
     // Pokaż modal tylko na stronie głównej
     const showModalOnThisPage = location.pathname === '/';
 
+    // Use centralized check
+    // We need to import it, but inside FC is tricky without top-level import.
+    // Actually, let's just use the logic directly if import is hard, BUT we just fixed logic in authUtils.
+    // Ideally we add import at top. I will try to update the whole file range or just add import at top in separate call? 
+    // No, I can replace the check with a call if I add import.
+
+    // WAIT: I cannot easily add top-level import with replace_file_content if I am editing middle of file.
+    // I should probably edit imports first or use a larger block.
+
+    const email = user?.email;
+    // We'll trust that I will add the import in a second step or assume I can do it here if I include top of file?
+    // No, let's just replicate the fix locally first to be safe, OR do it properly.
+    // Proper way: Add import at top, then usage here.
+
+    // Replicating logic locally for safety if import fails/is hard in one go:
+    const isAdvisorEmailCheck = (email: string | null | undefined) => {
+        if (!email) return false;
+        const lower = email.toLowerCase();
+        const isDomainMatch = ['@kredyt.pl', '@admin.pl', '@blachlinski.pl'].some(d => lower.endsWith(d));
+        if (!isDomainMatch) return false;
+        const localPart = lower.split('@')[0];
+        return !/^\d+$/.test(localPart);
+    }
+    const isAdvisor = isAdvisorEmailCheck(email);
+
     return (
         <header className={`header ${isScrolled ? 'header--scrolled' : ''}`}>
             {showModalOnThisPage && (
@@ -64,9 +89,14 @@ export const Header: React.FC = () => {
 
                         {user ? (
                             <>
-                                <span className="header__user-name">
+                                <span className="header__user-name font-medium mr-2">
                                     {user.displayName || user.email}
                                 </span>
+                                <Link to={isAdvisor ? "/dashboard?view=advisor" : "/dashboard"}>
+                                    <Button variant="primary" size="sm" className="mr-2">
+                                        Twój Panel
+                                    </Button>
+                                </Link>
                                 <Button
                                     variant="ghost"
                                     size="sm"
@@ -77,11 +107,6 @@ export const Header: React.FC = () => {
                             </>
                         ) : (
                             <div style={{ display: 'flex', gap: '0.5rem', alignItems: 'center' }}>
-                                <Link to="/dashboard">
-                                    <Button variant="ghost" size="sm">
-                                        Dla Doradców
-                                    </Button>
-                                </Link>
                                 <Link to="/login">
                                     <Button variant="primary" size="sm">
                                         Logowanie Klienta
@@ -108,11 +133,11 @@ export const Header: React.FC = () => {
                 <nav className="header__mobile-nav">
                 </nav>
                 <div className="header__mobile-actions">
-                    <Link to="/dashboard" onClick={() => setIsMenuOpen(false)}>
-                        <Button variant="outline" size="lg" fullWidth>Panel Doradcy</Button>
-                    </Link>
                     {user ? (
                         <>
+                            <Link to={isAdvisor ? "/dashboard?view=advisor" : "/dashboard"} onClick={() => setIsMenuOpen(false)}>
+                                <Button variant="primary" size="lg" fullWidth className="mb-2">Twój Panel</Button>
+                            </Link>
                             <Button
                                 variant="ghost"
                                 size="lg"
@@ -127,7 +152,7 @@ export const Header: React.FC = () => {
                         </>
                     ) : (
                         <>
-                            <Link to="/dashboard" onClick={() => setIsMenuOpen(false)}>
+                            <Link to="/doradca" onClick={() => setIsMenuOpen(false)}>
                                 <Button variant="ghost" size="lg" fullWidth>Panel Doradcy</Button>
                             </Link>
                             <Link to="/login" onClick={() => setIsMenuOpen(false)}>

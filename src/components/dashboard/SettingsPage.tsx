@@ -1,13 +1,19 @@
 import React, { useState } from 'react';
 import { Button } from '../ui/Button';
 import { useToast } from '../../context/ToastContext';
+import { useAuth } from '../../context/AuthContext';
 import './SettingsPage.css';
 
 export const SettingsPage: React.FC = () => {
     const { showToast } = useToast();
+    const { user } = useAuth();
+
+    // Simple role detection for debug
+    const isClient = user?.email?.indexOf('@kredyt.pl') !== -1;
+
     const [profile, setProfile] = useState({
-        name: 'Jan Kowalski',
-        email: 'jan.kowalski@creditadvisor.com',
+        name: user?.displayName || 'Jan Kowalski',
+        email: user?.email || 'jan.kowalski@creditadvisor.com',
         phone: '+48 123 456 789',
     });
 
@@ -35,6 +41,17 @@ export const SettingsPage: React.FC = () => {
     return (
         <div className="settings-container">
             <h2 className="settings-title">Ustawienia Konta</h2>
+
+            {/* Debug Section */}
+            <div className="bg-gray-100 p-4 mb-6 rounded border border-gray-200">
+                <h3 className="text-sm font-bold text-gray-500 uppercase mb-2">Debug Info (Tylko dla administratora)</h3>
+                <div className="text-sm font-mono">
+                    <div>User ID: {user?.uid}</div>
+                    <div>Email: {user?.email}</div>
+                    <div>Is Client: {isClient ? 'TAK' : 'NIE'}</div>
+                    <div className="text-xs text-gray-400 mt-1">Jeśli jesteś klientem a widzisz "NIE", skontaktuj się ze wsparciem.</div>
+                </div>
+            </div>
 
             <div className="settings-section">
                 <h3 className="section-header">Profil Doradcy</h3>

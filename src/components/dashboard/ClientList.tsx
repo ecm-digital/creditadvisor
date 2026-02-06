@@ -1,11 +1,13 @@
 import React, { useState, useEffect } from 'react';
 import { Link } from 'react-router-dom';
+import { Mail, Phone, Upload, UserPlus, Users, MessageSquare, Edit2, Trash2, FileText, FileCheck, Activity } from 'lucide-react';
 import { Button } from '../ui/Button';
 import { useToast } from '../../context/ToastContext';
 import { smsService } from '../../services/smsService';
 import { clientService, type Client } from '../../services/clientService';
+import { applicationService, type LoanApplication } from '../../services/applicationService';
 import { n8nService } from '../../services/n8nService';
-import { seedClients } from '../../utils/seedData';
+import '../../styles/advisor-design-system.css';
 import './ClientList.css';
 
 const statusLabels = {
@@ -15,10 +17,22 @@ const statusLabels = {
     closed: 'Zamknięty',
 };
 
+const appStatusLabels = {
+    draft: 'Projekt',
+    submitted: 'Wysłany',
+    in_review: 'W analizie',
+    approved: 'Zatwierdzony',
+    rejected: 'Odrzucony'
+};
+
 export const ClientList: React.FC = () => {
     const { showToast } = useToast();
     const [clients, setClients] = useState<Client[]>([]);
+    const [applications, setApplications] = useState<LoanApplication[]>([]);
     const [isLoading, setIsLoading] = useState(true);
+    const [viewMode, setViewMode] = useState<'leads' | 'apps'>('leads');
+
+    // UI States
     const [smsModalOpen, setSmsModalOpen] = useState(false);
     const [addClientModalOpen, setAddClientModalOpen] = useState(false);
     const [editClientModalOpen, setEditClientModalOpen] = useState(false);
@@ -26,35 +40,8 @@ export const ClientList: React.FC = () => {
     const [selectedClient, setSelectedClient] = useState<Client | null>(null);
     const [smsMessage, setSmsMessage] = useState('');
     const [isSending, setIsSending] = useState(false);
-    const [smsStatus, setSmsStatus] = useState<{ configured: boolean; mode: 'mock' | 'production' } | null>(null);
-    const [backendConfigured, setBackendConfigured] = useState<boolean>(false);
 
-    // Load clients from Supabase on mount
-    useEffect(() => {
-        loadClients();
-        setSmsStatus(smsService.getStatus());
-        setBackendConfigured(clientService.isConfigured());
-    }, []);
-
-    const loadClients = async () => {
-        setIsLoading(true);
-        try {
-            if (clientService.isConfigured()) {
-                const data = await clientService.getAll();
-                setClients(data);
-            } else {
-                showToast('Firebase nie jest skonfigurowane. Używasz trybu offline.', 'info');
-                setClients([]);
-            }
-        } catch (error) {
-            console.error('Error loading clients:', error);
-            showToast('Błąd podczas ładowania klientów', 'error');
-        } finally {
-            setIsLoading(false);
-        }
-    };
-
-    // New Client Form State
+    // Form states
     const [newClient, setNewClient] = useState({
         name: '',
         email: '',
@@ -63,6 +50,35 @@ export const ClientList: React.FC = () => {
 
     const fileInputRef = React.useRef<HTMLInputElement>(null);
 
+    // Load data on mount
+    useEffect(() => {
+        loadData();
+    }, []);
+
+    const loadData = async () => {
+        setIsLoading(true);
+        try {
+            if (clientService.isConfigured()) {
+                const [clientsData, appsData] = await Promise.all([
+                    clientService.getAll(),
+                    applicationService.getAll()
+                ]);
+                setClients(clientsData);
+                setApplications(appsData);
+            } else {
+                showToast('Firebase nie jest skonfigurowane.', 'info');
+                setClients([]);
+                setApplications([]);
+            }
+        } catch (error) {
+            console.error('Error loading data:', error);
+            showToast('Błąd ładowania danych', 'error');
+        } finally {
+            setIsLoading(false);
+        }
+    };
+
+    // --- SMS Action Functions ---
     const openSmsModal = (client: Client) => {
         setSelectedClient(client);
         setSmsMessage(`Dzień dobry ${client.name}, informujemy o zmianie statusu Twojego wniosku. Pozdrawiamy, CreditAdvisor.`);
@@ -78,572 +94,344 @@ export const ClientList: React.FC = () => {
 
     const handleSendSms = async () => {
         if (!selectedClient) return;
-
         setIsSending(true);
-
         try {
             const response = await smsService.sendSms(selectedClient.phone, smsMessage);
-
             if (response.success) {
                 showToast(`SMS wysłany do ${selectedClient.name}`, 'success');
-
-                // Notify n8n about SMS sent
-                n8nService.onSmsSent(selectedClient, smsMessage, response).catch(err => {
-                    console.error('Error notifying n8n about SMS:', err);
-                });
-
+                n8nService.onSmsSent(selectedClient, smsMessage, response).catch(err => console.error(err));
                 closeSmsModal();
             } else {
-                const errorMsg = response.error || 'Błąd podczas wysyłania SMS';
-                showToast(`Błąd: ${errorMsg}`, 'error');
-                console.error('SMS Error:', response);
+                showToast(`Błąd: ${response.error || 'Błąd wysyłki'}`, 'error');
             }
         } catch (error) {
-            const errorMsg = error instanceof Error ? error.message : 'Wystąpił nieoczekiwany błąd';
-            showToast(`Błąd: ${errorMsg}`, 'error');
-            console.error('SMS Exception:', error);
+            showToast('Błąd wysyłki', 'error');
         } finally {
             setIsSending(false);
         }
     };
 
+    // --- Client Management Functions ---
     const handleAddClient = async (e: React.FormEvent) => {
         e.preventDefault();
-
-        // Validate email format
-        const emailRegex = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
-        if (!emailRegex.test(newClient.email)) {
-            showToast('Nieprawidłowy format adresu email', 'error');
-            return;
-        }
-
-        // Check if client with this email already exists
-        const emailExists = clients.some(c => c.email.toLowerCase() === newClient.email.toLowerCase());
-        if (emailExists) {
-            showToast('Klient z tym adresem email już istnieje', 'error');
-            return;
-        }
-
-        if (!clientService.isConfigured()) {
-            showToast('Firebase nie jest skonfigurowane. Nie można dodać klienta.', 'error');
-            return;
-        }
-
         try {
             const client = await clientService.create({
-                name: newClient.name.trim(),
-                email: newClient.email.trim().toLowerCase(),
-                phone: newClient.phone.trim(),
+                ...newClient,
                 status: 'new',
                 date: new Date().toISOString().split('T')[0]
             });
-
             setClients([client, ...clients]);
             setAddClientModalOpen(false);
             setNewClient({ name: '', email: '', phone: '' });
-            showToast('Klient został dodany', 'success');
-
-            // n8n notification is handled in clientService.create()
+            showToast('Klient dodany', 'success');
         } catch (error) {
-            console.error('Error adding client:', error);
-            showToast('Błąd podczas dodawania klienta', 'error');
+            showToast('Błąd dodawania', 'error');
         }
     };
 
     const handleEditClient = (client: Client) => {
         setEditingClient(client);
-        setNewClient({
-            name: client.name,
-            email: client.email,
-            phone: client.phone
-        });
+        setNewClient({ name: client.name, email: client.email, phone: client.phone });
         setEditClientModalOpen(true);
     };
 
     const handleUpdateClient = async (e: React.FormEvent) => {
         e.preventDefault();
         if (!editingClient) return;
-
-        // Validate email format
-        const emailRegex = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
-        if (!emailRegex.test(newClient.email)) {
-            showToast('Nieprawidłowy format adresu email', 'error');
-            return;
-        }
-
-        // Check if email is taken by another client
-        const emailExists = clients.some(c =>
-            c.id !== editingClient.id &&
-            c.email.toLowerCase() === newClient.email.toLowerCase()
-        );
-        if (emailExists) {
-            showToast('Klient z tym adresem email już istnieje', 'error');
-            return;
-        }
-
-        if (!clientService.isConfigured()) {
-            showToast('Firebase nie jest skonfigurowane. Nie można zaktualizować klienta.', 'error');
-            return;
-        }
-
         try {
-            const updatedClient = await clientService.update(editingClient.id, {
-                name: newClient.name.trim(),
-                email: newClient.email.trim().toLowerCase(),
-                phone: newClient.phone.trim(),
-            });
-
-            // Check if status changed
-            if (editingClient.status !== updatedClient.status) {
-                n8nService.onStatusChanged(updatedClient, editingClient.status, updatedClient.status).catch(err => {
-                    console.error('Error notifying n8n about status change:', err);
-                });
-            }
-
+            const updatedClient = await clientService.update(editingClient.id, { ...newClient });
             setClients(clients.map(c => c.id === editingClient.id ? updatedClient : c));
             setEditClientModalOpen(false);
             setEditingClient(null);
             setNewClient({ name: '', email: '', phone: '' });
-            showToast('Dane klienta zostały zaktualizowane', 'success');
+            showToast('Dane zaktualizowane', 'success');
         } catch (error) {
-            console.error('Error updating client:', error);
-            showToast('Błąd podczas aktualizacji klienta', 'error');
+            showToast('Błąd aktualizacji', 'error');
         }
     };
 
     const handleDeleteClient = async (clientId: string, clientName: string) => {
-        if (!window.confirm(`Czy na pewno chcesz usunąć klienta "${clientName}"?`)) {
-            return;
-        }
-
-        if (!clientService.isConfigured()) {
-            showToast('Firebase nie jest skonfigurowane. Nie można usunąć klienta.', 'error');
-            return;
-        }
-
+        if (!window.confirm(`Czy usunąć klienta ${clientName}?`)) return;
         try {
             await clientService.delete(clientId);
             setClients(clients.filter(c => c.id !== clientId));
-            showToast('Klient został usunięty', 'success');
-
-            // Notify n8n about client deletion
-            n8nService.onClientDeleted(clientId, clientName).catch(err => {
-                console.error('Error notifying n8n about client deletion:', err);
-            });
+            showToast('Klient usunięty', 'success');
         } catch (error) {
-            console.error('Error deleting client:', error);
-            showToast('Błąd podczas usuwania klienta', 'error');
+            showToast('Błąd usuwania', 'error');
         }
-    };
-
-    const closeEditModal = () => {
-        setEditClientModalOpen(false);
-        setEditingClient(null);
-        setNewClient({ name: '', email: '', phone: '' });
     };
 
     const handleFileUpload = async (event: React.ChangeEvent<HTMLInputElement>) => {
         const file = event.target.files?.[0];
         if (!file) return;
-
-        if (!clientService.isConfigured()) {
-            showToast('Firebase nie jest skonfigurowane. Nie można importować klientów.', 'error');
-            return;
-        }
-
         const reader = new FileReader();
         reader.onload = async (e) => {
             const text = e.target?.result as string;
             const lines = text.split('\n');
-            const clientsToImport: Omit<Client, 'id' | 'created_at' | 'updated_at'>[] = [];
-
-            // Simple CSV parsing
-            // Expected format: name,email,phone,status(optional),date(optional)
-            lines.forEach((line, index) => {
-                if (index === 0 && line.toLowerCase().includes('email')) return; // Skip header
-
-                const [name, email, phone, status, date] = line.split(',').map(s => s.trim());
-
+            const created = [];
+            for (let i = 1; i < lines.length; i++) {
+                const [name, email, phone] = lines[i].split(',');
                 if (name && email) {
-                    clientsToImport.push({
-                        name,
-                        email: email.toLowerCase(),
-                        phone: phone || '',
-                        status: (status as any) || 'new',
-                        date: date || new Date().toISOString().split('T')[0]
-                    });
+                    try {
+                        const c = await clientService.create({ name, email, phone, status: 'new', date: new Date().toISOString().split('T')[0] });
+                        created.push(c);
+                    } catch (err) { }
                 }
-            });
-
-            if (clientsToImport.length > 0) {
-                try {
-                    const createdClients: Client[] = [];
-                    for (const clientData of clientsToImport) {
-                        try {
-                            const client = await clientService.create(clientData);
-                            createdClients.push(client);
-                        } catch (error) {
-                            console.error('Error importing client:', clientData, error);
-                        }
-                    }
-
-                    if (createdClients.length > 0) {
-                        setClients([...createdClients, ...clients]);
-                        showToast(`Zaimportowano ${createdClients.length} z ${clientsToImport.length} klientów`, 'success');
-                    } else {
-                        showToast('Nie udało się zaimportować żadnych klientów', 'error');
-                    }
-                } catch (error) {
-                    console.error('Error importing clients:', error);
-                    showToast('Błąd podczas importowania klientów', 'error');
-                }
-            } else {
-                showToast('Nie znaleziono poprawnych danych w pliku', 'error');
             }
-
-            // Reset input
-            if (fileInputRef.current) {
-                fileInputRef.current.value = '';
+            if (created.length > 0) {
+                setClients([...created, ...clients]);
+                showToast(`Zaimportowano ${created.length} klientów`, 'success');
             }
         };
         reader.readAsText(file);
     };
 
     return (
-        <div className="client-list-container">
-            <div className="list-header">
-                <h2 className="list-title">Lista Klientów</h2>
-                <div style={{ display: 'flex', gap: '10px' }}>
-                    <input
-                        type="file"
-                        accept=".csv"
-                        ref={fileInputRef}
-                        style={{ display: 'none' }}
-                        onChange={handleFileUpload}
-                    />
+        <div className="client-list-modern">
+            <div className="list-header-modern">
+                <div>
+                    <h2 className="list-title-modern">Panel Doradcy</h2>
+                    <p className="list-subtitle">Zarządzaj leadami i wnioskami online</p>
+                </div>
+                <div className="list-actions-modern">
+                    <input type="file" accept=".csv" ref={fileInputRef} style={{ display: 'none' }} onChange={handleFileUpload} />
                     <Button variant="outline" size="sm" onClick={() => fileInputRef.current?.click()}>
-                        Importuj CSV
+                        <Upload size={16} /> Importuj
                     </Button>
-                    <Button
-                        variant="outline"
-                        size="sm"
-                        onClick={async () => {
-                            console.log('Generate button clicked');
-                            if (!clientService.isConfigured()) {
-                                showToast('Błąd konfiguracji Firebase.', 'error');
-                                return;
-                            }
-
-                            if (window.confirm('Czy dodać 5 testowych klientów?')) {
-                                setIsLoading(true);
-                                try {
-                                    console.log('Starting seed...');
-                                    const newClients = await seedClients();
-                                    console.log('Seed done', newClients);
-
-                                    if (newClients.length > 0) {
-                                        setClients(prev => [...newClients, ...prev]);
-                                        showToast(`Sukces! Dodano ${newClients.length} klientów.`, 'success');
-                                    } else {
-                                        showToast('Nie udało się dodać klientów. Sprawdź konsolę.', 'error');
-                                    }
-                                } catch (error) {
-                                    console.error('Seed error:', error);
-                                    showToast('Wystąpił błąd podczas generowania.', 'error');
-                                } finally {
-                                    setIsLoading(false);
-                                }
-                            }
-                        }}
-                    >
-                        Generuj Dane
-                    </Button>
-
                     <Button size="sm" onClick={() => setAddClientModalOpen(true)}>
-                        Dodaj klienta
+                        <UserPlus size={16} /> Dodaj klienta
                     </Button>
                 </div>
             </div>
 
-            {/* Client List Content */}
-            {
-                !backendConfigured && (
-                    <div style={{
-                        marginBottom: '16px',
-                        padding: '12px',
-                        backgroundColor: '#fff3e0',
-                        borderRadius: '4px',
-                        fontSize: '14px',
-                        color: '#e65100'
-                    }}>
-                        ⚠ Firebase nie jest skonfigurowane. Ustaw VITE_FIREBASE_* w pliku .env
+            {/* Dashboard Stats */}
+            <div className="grid grid-cols-1 md:grid-cols-4 gap-6 mb-8">
+                <div className="stats-card-modern">
+                    <div className="stats-icon bg-blue-100 text-blue-600"><Users size={20} /></div>
+                    <div className="stats-info">
+                        <span className="stats-label">Suma Klientów</span>
+                        <span className="stats-value">{clients.length + applications.length}</span>
                     </div>
-                )
-            }
+                </div>
+                <div className="stats-card-modern">
+                    <div className="stats-icon bg-green-100 text-green-600"><FileCheck size={20} /></div>
+                    <div className="stats-info">
+                        <span className="stats-label">Wnioski Online</span>
+                        <span className="stats-value">{applications.length}</span>
+                    </div>
+                </div>
+                <div className="stats-card-modern">
+                    <div className="stats-icon bg-amber-100 text-amber-600"><Activity size={20} /></div>
+                    <div className="stats-info">
+                        <span className="stats-label">W analizie</span>
+                        <span className="stats-value">{applications.filter(a => a.status === 'in_review').length}</span>
+                    </div>
+                </div>
+                <div className="stats-card-modern">
+                    <div className="stats-icon bg-purple-100 text-purple-600"><MessageSquare size={20} /></div>
+                    <div className="stats-info">
+                        <span className="stats-label">Leady (Nowe)</span>
+                        <span className="stats-value">{clients.filter(c => c.status === 'new').length}</span>
+                    </div>
+                </div>
+            </div>
 
-            {
-                isLoading ? (
-                    <div style={{ textAlign: 'center', padding: '40px' }}>
-                        <p>Ładowanie klientów...</p>
-                    </div>
-                ) : (
-                    <div className="table-container">
-                        <table className="client-table">
-                            <thead>
+            {/* View Selection Tabs */}
+            <div className="flex items-center gap-1 mb-6 bg-slate-100 p-1 rounded-xl w-fit">
+                <button
+                    onClick={() => setViewMode('leads')}
+                    className={`px-6 py-2 rounded-lg text-sm font-bold transition-all ${viewMode === 'leads' ? 'bg-white text-blue-600 shadow-sm' : 'text-slate-500 hover:text-slate-700'
+                        }`}
+                >
+                    Lead Tracker
+                </button>
+                <button
+                    onClick={() => setViewMode('apps')}
+                    className={`px-6 py-2 rounded-lg text-sm font-bold transition-all flex items-center gap-2 ${viewMode === 'apps' ? 'bg-white text-blue-600 shadow-sm' : 'text-slate-500 hover:text-slate-700'
+                        }`}
+                >
+                    Wnioski Online
+                    {applications.filter(a => a.status === 'submitted').length > 0 && (
+                        <span className="bg-blue-600 text-white text-[10px] px-1.5 py-0.5 rounded-full">
+                            {applications.filter(a => a.status === 'submitted').length}
+                        </span>
+                    )}
+                </button>
+            </div>
+
+            {isLoading ? (
+                <div className="loading-container-modern py-20">
+                    <div className="loading-spinner"></div>
+                    <p className="mt-4 text-slate-500">Ładowanie danych...</p>
+                </div>
+            ) : (
+                <div className="client-table-modern bg-white rounded-3xl border border-slate-100 shadow-sm overflow-hidden">
+                    <table className="w-full">
+                        <thead>
+                            {viewMode === 'leads' ? (
                                 <tr>
-                                    <th>Klient</th>
-                                    <th>Kontakt</th>
-                                    <th>Status</th>
-                                    <th>Data zgłoszenia</th>
-                                    <th>Akcje</th>
+                                    <th className="px-6 py-4 text-left text-xs font-bold text-slate-500 uppercase tracking-wider">Klient</th>
+                                    <th className="px-6 py-4 text-left text-xs font-bold text-slate-500 uppercase tracking-wider">Kontakt</th>
+                                    <th className="px-6 py-4 text-left text-xs font-bold text-slate-500 uppercase tracking-wider">Status</th>
+                                    <th className="px-6 py-4 text-left text-xs font-bold text-slate-500 uppercase tracking-wider">Data</th>
+                                    <th className="px-6 py-4 text-left text-xs font-bold text-slate-500 uppercase tracking-wider">Akcje</th>
                                 </tr>
-                            </thead>
-                            <tbody>
-                                {clients.length === 0 ? (
-                                    <tr>
-                                        <td colSpan={5} style={{ textAlign: 'center', padding: '40px' }}>
-                                            {backendConfigured ? 'Brak klientów. Dodaj pierwszego klienta!' : 'Skonfiguruj Firebase, aby rozpocząć.'}
-                                        </td>
-                                    </tr>
+                            ) : (
+                                <tr>
+                                    <th className="px-6 py-4 text-left text-xs font-bold text-slate-500 uppercase tracking-wider">Wnioskodawca</th>
+                                    <th className="px-6 py-4 text-left text-xs font-bold text-slate-500 uppercase tracking-wider">Parametry</th>
+                                    <th className="px-6 py-4 text-left text-xs font-bold text-slate-500 uppercase tracking-wider">Status</th>
+                                    <th className="px-6 py-4 text-left text-xs font-bold text-slate-500 uppercase tracking-wider">Ostatnia Aktywność</th>
+                                    <th className="px-6 py-4 text-left text-xs font-bold text-slate-500 uppercase tracking-wider">Akcje</th>
+                                </tr>
+                            )}
+                        </thead>
+                        <tbody className="divide-y divide-slate-100">
+                            {viewMode === 'leads' ? (
+                                clients.length === 0 ? (
+                                    <tr><td colSpan={5} className="text-center py-20 text-slate-400">Brak leadów.</td></tr>
                                 ) : (
-                                    clients.map((client) => (
-                                        <tr key={client.id}>
-                                            <td>
-                                                <div className="client-name">
-                                                    {client.name}
-                                                    {client.user_id && (
-                                                        <span style={{
-                                                            marginLeft: '8px',
-                                                            fontSize: '11px',
-                                                            backgroundColor: '#e0f2f1',
-                                                            color: '#00695c',
-                                                            padding: '2px 6px',
-                                                            borderRadius: '12px',
-                                                            border: '1px solid #b2dfdb'
-                                                        }}>
-                                                            👤 Konto
-                                                        </span>
-                                                    )}
+                                    clients.map(client => (
+                                        <tr key={client.id} className="hover:bg-slate-50 transition-colors">
+                                            <td className="px-6 py-4">
+                                                <div className="flex items-center gap-3">
+                                                    <div className="w-10 h-10 bg-blue-50 text-blue-600 rounded-full flex items-center justify-center font-bold">
+                                                        {client.name.substring(0, 2).toUpperCase()}
+                                                    </div>
+                                                    <div>
+                                                        <div className="font-bold text-slate-900">{client.name}</div>
+                                                        <div className="text-xs text-slate-500">{client.email}</div>
+                                                    </div>
                                                 </div>
                                             </td>
-                                            <td>
-                                                <div className="client-email">{client.email}</div>
-                                                <div className="client-phone">{client.phone}</div>
+                                            <td className="px-6 py-4">
+                                                <div className="text-sm text-slate-600">
+                                                    <div className="flex items-center gap-1"><Mail size={12} /> {client.email}</div>
+                                                    {client.phone && <div className="flex items-center gap-1 mt-1"><Phone size={12} /> {client.phone}</div>}
+                                                </div>
                                             </td>
-                                            <td>
-                                                <span className={`status-badge status-${client.status}`}>
-                                                    {statusLabels[client.status]}
+                                            <td className="px-6 py-4">
+                                                <span className={`status-badge-modern status-${client.status}`}>
+                                                    {statusLabels[client.status as keyof typeof statusLabels]}
                                                 </span>
                                             </td>
-                                            <td>{client.date}</td>
-                                            <td>
-                                                <div className="actions-cell" style={{ display: 'flex', gap: '8px', flexWrap: 'wrap' }}>
-                                                    <Button
-                                                        variant="outline"
-                                                        size="sm"
-                                                        onClick={() => openSmsModal(client)}
-                                                        title="Wyślij SMS"
-                                                    >
-                                                        💬 SMS
-                                                    </Button>
-                                                    <Button
-                                                        variant="outline"
-                                                        size="sm"
-                                                        onClick={() => handleEditClient(client)}
-                                                        title="Edytuj klienta"
-                                                    >
-                                                        ✏️ Edytuj
-                                                    </Button>
-                                                    <Button
-                                                        variant="ghost"
-                                                        size="sm"
-                                                        onClick={() => handleDeleteClient(client.id, client.name)}
-                                                        title="Usuń klienta"
-                                                        style={{ color: '#d32f2f' }}
-                                                    >
-                                                        🗑️ Usuń
-                                                    </Button>
-                                                    <Link to={`/dashboard/applications/${client.id}`}>
-                                                        <Button variant="ghost" size="sm">Szczegóły</Button>
-                                                    </Link>
+                                            <td className="px-6 py-4 text-sm text-slate-500">{client.date}</td>
+                                            <td className="px-6 py-4 text-right">
+                                                <div className="flex gap-2">
+                                                    <Button variant="ghost" size="sm" onClick={() => openSmsModal(client)}><MessageSquare size={14} /></Button>
+                                                    <Button variant="ghost" size="sm" onClick={() => handleEditClient(client)}><Edit2 size={14} /></Button>
+                                                    <Button variant="ghost" size="sm" onClick={() => handleDeleteClient(client.id, client.name)} className="text-red-500"><Trash2 size={14} /></Button>
                                                 </div>
                                             </td>
                                         </tr>
                                     ))
-                                )}
-                            </tbody>
-                        </table>
-                    </div>
-                )
-            }
+                                )
+                            ) : (
+                                applications.length === 0 ? (
+                                    <tr><td colSpan={5} className="text-center py-20 text-slate-400">Brak wniosków online.</td></tr>
+                                ) : (
+                                    applications.map(app => (
+                                        <tr key={app.userId} className="hover:bg-slate-50 transition-colors">
+                                            <td className="px-6 py-4">
+                                                <div className="flex items-center gap-3">
+                                                    <div className="w-10 h-10 bg-green-50 text-green-600 rounded-full flex items-center justify-center font-bold">
+                                                        <FileText size={18} />
+                                                    </div>
+                                                    <div>
+                                                        <div className="font-bold text-slate-900">{app.email || 'Anonimowy'}</div>
+                                                        <div className="text-xs text-slate-500">ID: ...{app.userId.substring(app.userId.length - 8)}</div>
+                                                    </div>
+                                                </div>
+                                            </td>
+                                            <td className="px-6 py-4">
+                                                <div className="text-sm">
+                                                    <div className="font-bold text-slate-900">{app.amount?.toLocaleString()} PLN</div>
+                                                    <div className="text-xs text-slate-500">{app.purpose || '-'} • {app.period} lat</div>
+                                                </div>
+                                            </td>
+                                            <td className="px-6 py-4">
+                                                <span className={`status-badge-modern status-${app.status}`}>
+                                                    {appStatusLabels[app.status as keyof typeof appStatusLabels]}
+                                                </span>
+                                            </td>
+                                            <td className="px-6 py-4 text-sm text-slate-500">
+                                                {app.updatedAt?.toDate ? app.updatedAt.toDate().toLocaleString('pl-PL') : (app.submittedAt || '-')}
+                                            </td>
+                                            <td className="px-6 py-4 text-right">
+                                                <Link to={`/dashboard/applications/${app.userId}`}>
+                                                    <Button variant="outline" size="sm" className="flex items-center gap-2">
+                                                        Szczegóły <FileText size={14} />
+                                                    </Button>
+                                                </Link>
+                                            </td>
+                                        </tr>
+                                    ))
+                                )
+                            )}
+                        </tbody>
+                    </table>
+                </div>
+            )}
 
-            {/* Add Client Modal */}
-            {
-                addClientModalOpen && (
-                    <div className="modal-overlay">
-                        <div className="sms-modal">
-                            <div className="sms-modal-header">
-                                <h3 className="sms-modal-title">Dodaj nowego klienta</h3>
-                                <button className="sms-modal-close" onClick={() => setAddClientModalOpen(false)}>&times;</button>
-                            </div>
-                            <form onSubmit={handleAddClient}>
-                                <div className="sms-modal-body">
-                                    <div style={{ marginBottom: '16px' }}>
-                                        <label style={{ display: 'block', marginBottom: '8px', fontSize: '14px', fontWeight: 500 }}>Imię i nazwisko</label>
-                                        <input
-                                            type="text"
-                                            className="sms-textarea"
-                                            style={{ height: '40px' }}
-                                            value={newClient.name}
-                                            onChange={e => setNewClient({ ...newClient, name: e.target.value })}
-                                            required
-                                            placeholder="np. Jan Kowalski"
-                                        />
-                                    </div>
-                                    <div style={{ marginBottom: '16px' }}>
-                                        <label style={{ display: 'block', marginBottom: '8px', fontSize: '14px', fontWeight: 500 }}>Email</label>
-                                        <input
-                                            type="email"
-                                            className="sms-textarea"
-                                            style={{ height: '40px' }}
-                                            value={newClient.email}
-                                            onChange={e => setNewClient({ ...newClient, email: e.target.value })}
-                                            required
-                                            placeholder="np. jan@example.com"
-                                        />
-                                    </div>
-                                    <div style={{ marginBottom: '16px' }}>
-                                        <label style={{ display: 'block', marginBottom: '8px', fontSize: '14px', fontWeight: 500 }}>Telefon</label>
-                                        <input
-                                            type="tel"
-                                            className="sms-textarea"
-                                            style={{ height: '40px' }}
-                                            value={newClient.phone}
-                                            onChange={e => setNewClient({ ...newClient, phone: e.target.value })}
-                                            required
-                                            placeholder="np. 500 123 456"
-                                        />
-                                    </div>
-                                </div>
-                                <div className="sms-modal-footer">
-                                    <Button type="button" variant="ghost" onClick={() => setAddClientModalOpen(false)}>Anuluj</Button>
-                                    <Button type="submit" variant="primary">Dodaj klienta</Button>
-                                </div>
-                            </form>
+            {/* Modals */}
+            {addClientModalOpen && (
+                <div className="modal-overlay">
+                    <div className="sms-modal">
+                        <div className="sms-modal-header">
+                            <h3 className="sms-modal-title">Dodaj klienta</h3>
+                            <button className="sms-modal-close" onClick={() => setAddClientModalOpen(false)}>&times;</button>
                         </div>
-                    </div>
-                )
-            }
-
-            {/* Edit Client Modal */}
-            {
-                editClientModalOpen && editingClient && (
-                    <div className="modal-overlay">
-                        <div className="sms-modal">
-                            <div className="sms-modal-header">
-                                <h3 className="sms-modal-title">Edytuj klienta</h3>
-                                <button className="sms-modal-close" onClick={closeEditModal}>&times;</button>
+                        <form onSubmit={handleAddClient} className="p-6 space-y-4">
+                            <input className="advisor-input" placeholder="Imię i nazwisko" value={newClient.name} onChange={e => setNewClient({ ...newClient, name: e.target.value })} required />
+                            <input className="advisor-input" placeholder="Email" type="email" value={newClient.email} onChange={e => setNewClient({ ...newClient, email: e.target.value })} required />
+                            <input className="advisor-input" placeholder="Telefon" value={newClient.phone} onChange={e => setNewClient({ ...newClient, phone: e.target.value })} required />
+                            <div className="flex justify-end gap-2 pt-4">
+                                <Button type="button" variant="ghost" onClick={() => setAddClientModalOpen(false)}>Anuluj</Button>
+                                <Button type="submit" variant="primary">Dodaj</Button>
                             </div>
-                            <form onSubmit={handleUpdateClient}>
-                                <div className="sms-modal-body">
-                                    <div style={{ marginBottom: '16px' }}>
-                                        <label style={{ display: 'block', marginBottom: '8px', fontSize: '14px', fontWeight: 500 }}>Imię i nazwisko</label>
-                                        <input
-                                            type="text"
-                                            className="sms-textarea"
-                                            style={{ height: '40px' }}
-                                            value={newClient.name}
-                                            onChange={e => setNewClient({ ...newClient, name: e.target.value })}
-                                            required
-                                            placeholder="np. Jan Kowalski"
-                                        />
-                                    </div>
-                                    <div style={{ marginBottom: '16px' }}>
-                                        <label style={{ display: 'block', marginBottom: '8px', fontSize: '14px', fontWeight: 500 }}>Email</label>
-                                        <input
-                                            type="email"
-                                            className="sms-textarea"
-                                            style={{ height: '40px' }}
-                                            value={newClient.email}
-                                            onChange={e => setNewClient({ ...newClient, email: e.target.value })}
-                                            required
-                                            placeholder="np. jan@example.com"
-                                        />
-                                    </div>
-                                    <div style={{ marginBottom: '16px' }}>
-                                        <label style={{ display: 'block', marginBottom: '8px', fontSize: '14px', fontWeight: 500 }}>Telefon</label>
-                                        <input
-                                            type="tel"
-                                            className="sms-textarea"
-                                            style={{ height: '40px' }}
-                                            value={newClient.phone}
-                                            onChange={e => setNewClient({ ...newClient, phone: e.target.value })}
-                                            required
-                                            placeholder="np. 500 123 456"
-                                        />
-                                    </div>
-                                </div>
-                                <div className="sms-modal-footer">
-                                    <Button type="button" variant="ghost" onClick={closeEditModal}>Anuluj</Button>
-                                    <Button type="submit" variant="primary">Zapisz zmiany</Button>
-                                </div>
-                            </form>
+                        </form>
+                    </div>
+                </div>
+            )}
+
+            {editClientModalOpen && (
+                <div className="modal-overlay">
+                    <div className="sms-modal">
+                        <div className="sms-modal-header">
+                            <h3 className="sms-modal-title">Edytuj klienta</h3>
+                            <button className="sms-modal-close" onClick={() => setEditClientModalOpen(false)}>&times;</button>
                         </div>
+                        <form onSubmit={handleUpdateClient} className="p-6 space-y-4">
+                            <input className="advisor-input" placeholder="Imię i nazwisko" value={newClient.name} onChange={e => setNewClient({ ...newClient, name: e.target.value })} required />
+                            <input className="advisor-input" placeholder="Email" type="email" value={newClient.email} onChange={e => setNewClient({ ...newClient, email: e.target.value })} required />
+                            <input className="advisor-input" placeholder="Telefon" value={newClient.phone} onChange={e => setNewClient({ ...newClient, phone: e.target.value })} required />
+                            <div className="flex justify-end gap-2 pt-4">
+                                <Button type="button" variant="ghost" onClick={() => setEditClientModalOpen(false)}>Anuluj</Button>
+                                <Button type="submit" variant="primary">Zapisz</Button>
+                            </div>
+                        </form>
                     </div>
-                )
-            }
+                </div>
+            )}
 
-            {/* SMS Modal */}
-            {
-                smsModalOpen && selectedClient && (
-                    <div className="modal-overlay">
-                        <div className="sms-modal">
-                            <div className="sms-modal-header">
-                                <h3 className="sms-modal-title">Wyślij SMS</h3>
-                                <button className="sms-modal-close" onClick={closeSmsModal} disabled={isSending}>&times;</button>
-                            </div>
-                            <div className="sms-modal-body">
-                                <div className="sms-recipient">
-                                    Do: <strong>{selectedClient.name}</strong> ({selectedClient.phone})
-                                </div>
-                                <textarea
-                                    className="sms-textarea"
-                                    value={smsMessage}
-                                    onChange={(e) => setSmsMessage(e.target.value)}
-                                    placeholder="Wpisz treść wiadomości..."
-                                    disabled={isSending}
-                                />
-                                <div className="sms-info">
-                                    <span>Liczba znaków: {smsMessage.length}</span>
-                                    <span>Koszt: 0.16 zł</span>
-                                </div>
-                                {smsStatus && (
-                                    <div style={{
-                                        marginTop: '12px',
-                                        padding: '8px 12px',
-                                        backgroundColor: smsStatus.configured ? '#e8f5e9' : '#fff3e0',
-                                        borderRadius: '4px',
-                                        fontSize: '12px',
-                                        color: smsStatus.configured ? '#2e7d32' : '#e65100'
-                                    }}>
-                                        {smsStatus.configured ? (
-                                            <>✓ SMSAPI.pl skonfigurowane - wiadomości będą wysyłane</>
-                                        ) : (
-                                            <>⚠ Tryb testowy (mock) - SMS-y nie są wysyłane. Skonfiguruj VITE_SMSAPI_TOKEN w pliku .env</>
-                                        )}
-                                    </div>
-                                )}
-                            </div>
-                            <div className="sms-modal-footer">
+            {smsModalOpen && selectedClient && (
+                <div className="modal-overlay">
+                    <div className="sms-modal">
+                        <div className="sms-modal-header">
+                            <h3 className="sms-modal-title">Wyślij SMS</h3>
+                            <button className="sms-modal-close" onClick={closeSmsModal}>&times;</button>
+                        </div>
+                        <div className="p-6 space-y-4">
+                            <div className="text-sm text-slate-600">Do: <strong>{selectedClient.name}</strong> ({selectedClient.phone})</div>
+                            <textarea className="sms-textarea w-full h-32 p-3 border rounded-xl" value={smsMessage} onChange={e => setSmsMessage(e.target.value)} />
+                            <div className="flex justify-end gap-2">
                                 <Button variant="ghost" onClick={closeSmsModal} disabled={isSending}>Anuluj</Button>
-                                <Button variant="primary" onClick={handleSendSms} disabled={isSending}>
-                                    {isSending ? 'Wysyłanie...' : 'Wyślij wiadomość'}
-                                </Button>
+                                <Button variant="primary" onClick={handleSendSms} disabled={isSending}>Wyślij</Button>
                             </div>
                         </div>
                     </div>
-                )
-            }
-        </div >
+                </div>
+            )}
+        </div>
     );
 };

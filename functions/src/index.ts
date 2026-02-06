@@ -10,7 +10,8 @@ export const sendSms = onRequest(
     {
         region: "europe-west1",
         cors: true, // Native CORS support in v2
-        maxInstances: 10
+        maxInstances: 10,
+        invoker: 'public'
     },
     async (req, res) => {
         if (req.method !== 'POST') {
@@ -48,7 +49,7 @@ export const sendSms = onRequest(
             const params = new URLSearchParams();
             params.append('to', normalizedPhone);
             params.append('message', message);
-            params.append('from', 'Info');
+            params.append('from', 'Blachlinski');
             params.append('format', 'json');
             params.append('encoding', 'utf-8');
 
@@ -93,7 +94,8 @@ export const requestSmsCode = onRequest(
     {
         region: "europe-west1",
         cors: true,
-        maxInstances: 10
+        maxInstances: 10,
+        invoker: 'public'
     },
     async (req, res) => {
         if (req.method !== 'POST') {
@@ -109,18 +111,25 @@ export const requestSmsCode = onRequest(
 
         try {
             const normalizedPhone = normalizePhoneNumber(phoneNumber);
+            console.log(`[RequestSmsCode] Phone: ${phoneNumber}, Normalized: ${normalizedPhone}`);
 
             // 1. Check if user exists in 'clients' collection
             const clientsRef = admin.firestore().collection('clients');
             // Check both formats just in case
-            const snapshot = await clientsRef.where('phone', 'in', [normalizedPhone, `+${normalizedPhone}`, phoneNumber]).limit(1).get();
+            const searchTerms = [normalizedPhone, `+${normalizedPhone}`, phoneNumber];
+            console.log(`[RequestSmsCode] Searching for:`, searchTerms);
+
+            const snapshot = await clientsRef.where('phone', 'in', searchTerms).limit(1).get();
 
             if (snapshot.empty) {
+                console.warn(`[RequestSmsCode] No user found for ${phoneNumber}`);
                 // For security, maybe don't reveal this? But for UX, it's helpful.
                 // Let's return error for now as it is an internal app mostly.
                 res.status(404).send({ error: "Nie znaleziono użytkownika z tym numerem telefonu." });
                 return;
             }
+
+            console.log(`[RequestSmsCode] Found user!`);
 
             // 2. Generate 6-digit code
             const code = Math.floor(100000 + Math.random() * 900000).toString();
@@ -149,7 +158,7 @@ export const requestSmsCode = onRequest(
             const params = new URLSearchParams();
             params.append('to', normalizedPhone);
             params.append('message', message);
-            params.append('from', 'Info');
+            params.append('from', 'Blachlinski');
             params.append('format', 'json');
             params.append('encoding', 'utf-8');
 
@@ -179,7 +188,8 @@ export const verifySmsCode = onRequest(
     {
         region: "europe-west1",
         cors: true,
-        maxInstances: 10
+        maxInstances: 10,
+        invoker: 'public'
     },
     async (req, res) => {
         if (req.method !== 'POST') {
@@ -235,8 +245,8 @@ export const verifySmsCode = onRequest(
             const clientData = snapshot.docs[0].data();
             const uid = clientData.user_id;
 
-            // Generate Custom Token
-            const token = await admin.auth().createCustomToken(uid);
+            // Generate Custom Token with client role
+            const token = await admin.auth().createCustomToken(uid, { role: 'client' });
 
             // Clean up code
             await docRef.delete();
@@ -246,6 +256,56 @@ export const verifySmsCode = onRequest(
         } catch (error: any) {
             console.error("Error in verifySmsCode:", error);
             res.status(500).send({ error: "Internal Server Error", details: error.message });
+        }
+    }
+);
+
+// NUCLEAR RESET FUNCTION
+export const nukeDatabase = onRequest(
+    {
+        region: "europe-west1",
+        cors: true,
+        maxInstances: 1,
+        invoker: 'public'
+    },
+    async (req, res) => {
+        if (req.method !== 'POST') {
+            res.status(405).send('Method Not Allowed');
+            return;
+        }
+
+        try {
+            console.log('STARTING NUCLEAR RESET...');
+
+            // 1. Delete All Auth Users
+            const listUsersResult = await admin.auth().listUsers(1000);
+            const uids = listUsersResult.users.map(user => user.uid);
+            if (uids.length > 0) {
+                await admin.auth().deleteUsers(uids);
+                console.log(`Deleted ${uids.length} users from Auth.`);
+            }
+
+            // 2. Delete All Clients from Firestore
+            const clientsSnapshot = await admin.firestore().collection('clients').get();
+            const batch = admin.firestore().batch();
+            clientsSnapshot.docs.forEach(doc => {
+                batch.delete(doc.ref);
+            });
+
+            // 3. Delete All SMS Codes
+            const codesSnapshot = await admin.firestore().collection('sms_codes').get();
+            codesSnapshot.docs.forEach(doc => {
+                batch.delete(doc.ref);
+            });
+
+            await batch.commit();
+            console.log(`Deleted ${clientsSnapshot.size} clients and ${codesSnapshot.size} codes from Firestore.`);
+
+            res.send({ success: true, message: "System wyczyszczony do zera (Nuclear Option)." });
+
+        } catch (error: any) {
+            console.error("Nuclear Reset Error:", error);
+            res.status(500).send({ error: error.message });
         }
     }
 );

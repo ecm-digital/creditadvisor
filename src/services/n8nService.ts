@@ -153,6 +153,65 @@ export const n8nService = {
     },
 
     /**
+     * Notify n8n about a new loan application being submitted
+     */
+    async onApplicationSubmitted(application: any): Promise<void> {
+        await sendWebhook('application.submitted', {
+            application: {
+                userId: application.userId,
+                email: application.email,
+                phone: application.phone,
+                purpose: application.purpose,
+                amount: application.amount,
+                period: application.period,
+                incomeSource: application.incomeSource,
+                monthlyIncome: application.monthlyIncome,
+                selectedBankName: application.selectedBankName,
+                selectedInstallment: application.selectedInstallment,
+                status: application.status,
+                submittedAt: application.submittedAt,
+            },
+        });
+    },
+
+    /**
+     * Notify n8n about application status change
+     */
+    async onApplicationStatusChanged(
+        application: any,
+        oldStatus: string,
+        newStatus: string
+    ): Promise<void> {
+        await sendWebhook('application.status.changed', {
+            application: {
+                userId: application.userId,
+                email: application.email,
+                phone: application.phone,
+                amount: application.amount,
+                selectedBankName: application.selectedBankName,
+            },
+            oldStatus,
+            newStatus,
+        });
+    },
+
+    /**
+     * Notify n8n about document upload
+     */
+    async onDocumentUploaded(userId: string, document: any): Promise<void> {
+        await sendWebhook('document.uploaded', {
+            userId,
+            document: {
+                id: document.id,
+                displayName: document.displayName,
+                type: document.type,
+                size: document.size,
+                uploadedAt: document.uploadedAt,
+            },
+        });
+    },
+
+    /**
      * Check if n8n is configured
      */
     isConfigured(): boolean {

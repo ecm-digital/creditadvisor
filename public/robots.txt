@@ -1,0 +1,6 @@
+User-agent: *
+Allow: /
+Disallow: /dashboard
+Disallow: /admin
+Disallow: /klient
+Sitemap: https://www.blachlinski.pl/sitemap.xml

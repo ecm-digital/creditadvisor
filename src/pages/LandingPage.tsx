@@ -8,6 +8,7 @@ import { LeadMagnet } from '../components/landing/LeadMagnet';
 import { CreditConfigurator } from '../components/calculator/CreditConfigurator';
 import { FAQ } from '../components/landing/FAQ';
 import { LeadForm } from '../components/landing/LeadForm';
+import { Footer } from '../components/layout/Footer';
 
 export const LandingPage: React.FC = () => {
     return (
@@ -37,6 +38,7 @@ export const LandingPage: React.FC = () => {
                 <FAQ />
                 <LeadForm />
             </main>
+            <Footer />
         </div>
     );
 };

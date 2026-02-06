@@ -1,0 +1,327 @@
+.client-offers-container {
+    padding: 1.5rem;
+    animation: fadeIn 0.4s ease-out;
+}
+
+.offers-header {
+    display: flex;
+    justify-content: space-between;
+    align-items: flex-end;
+    margin-bottom: 2rem;
+    flex-wrap: wrap;
+    gap: 1.5rem;
+    background: #fff;
+    padding: 1.5rem;
+    border-radius: 12px;
+    box-shadow: 0 1px 3px rgba(0, 0, 0, 0.05);
+}
+
+.section-title {
+    font-size: 1.5rem;
+    font-weight: 700;
+    color: #1e293b;
+    margin-bottom: 0.5rem;
+}
+
+.section-subtitle {
+    color: #64748b;
+    font-size: 0.95rem;
+}
+
+.simulation-params {
+    display: flex;
+    gap: 2rem;
+}
+
+.param-item {
+    display: flex;
+    flex-direction: column;
+    gap: 0.25rem;
+}
+
+.param-label {
+    font-size: 0.8rem;
+    text-transform: uppercase;
+    color: #94a3b8;
+    font-weight: 600;
+    letter-spacing: 0.05em;
+}
+
+.param-controls {
+    display: flex;
+    align-items: center;
+    gap: 0.5rem;
+    background: #f1f5f9;
+    padding: 0.4rem 0.8rem;
+    border-radius: 8px;
+}
+
+.param-input {
+    border: none;
+    background: transparent;
+    font-weight: 600;
+    color: #334155;
+    font-size: 1rem;
+    width: 100px;
+    text-align: right;
+}
+
+.param-input:focus {
+    outline: none;
+}
+
+.unit {
+    color: #64748b;
+    font-size: 0.9rem;
+    font-weight: 500;
+}
+
+/* Offers List Layout */
+.offers-list {
+    display: flex;
+    flex-direction: column;
+    gap: 2rem;
+}
+
+.offer-row {
+    background: white;
+    border: 1px solid #cbd5e1;
+    /* Clean border */
+    border-radius: 4px;
+    /* Sharp corners or slight round */
+    overflow: hidden;
+    /* For header bg */
+    display: flex;
+    flex-direction: column;
+    box-shadow: 0 2px 4px rgba(0, 0, 0, 0.05);
+}
+
+.offer-row-header {
+    padding: 0.5rem 1rem;
+    display: flex;
+    align-items: center;
+}
+
+.header-content {
+    width: 100%;
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+}
+
+.bank-identity {
+    display: flex;
+    align-items: center;
+    gap: 0.75rem;
+}
+
+.bank-logo-small {
+    width: 24px;
+    height: 24px;
+    border-radius: 4px;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+}
+
+.bank-name-header {
+    font-weight: 700;
+    color: #1e293b;
+    font-size: 0.95rem;
+}
+
+.offer-header-toggle {
+    display: flex;
+    align-items: center;
+    gap: 0.5rem;
+}
+
+.toggle-label {
+    font-size: 0.9rem;
+    color: #3b82f6;
+    font-weight: 500;
+}
+
+/* Toggle Switch */
+.toggle-switch {
+    position: relative;
+    display: inline-block;
+    width: 36px;
+    height: 20px;
+}
+
+.toggle-switch input {
+    opacity: 0;
+    width: 0;
+    height: 0;
+}
+
+.slider {
+    position: absolute;
+    cursor: pointer;
+    top: 0;
+    left: 0;
+    right: 0;
+    bottom: 0;
+    background-color: #ccc;
+    -webkit-transition: .4s;
+    transition: .4s;
+}
+
+.slider:before {
+    position: absolute;
+    content: "";
+    height: 16px;
+    width: 16px;
+    left: 2px;
+    bottom: 2px;
+    background-color: white;
+    -webkit-transition: .4s;
+    transition: .4s;
+}
+
+input:checked+.slider {
+    background-color: #2196F3;
+}
+
+input:focus+.slider {
+    box-shadow: 0 0 1px #2196F3;
+}
+
+input:checked+.slider:before {
+    -webkit-transform: translateX(16px);
+    -ms-transform: translateX(16px);
+    transform: translateX(16px);
+}
+
+/* Rounded sliders */
+.slider.round {
+    border-radius: 34px;
+}
+
+.slider.round:before {
+    border-radius: 50%;
+}
+
+/* Body */
+.offer-row-body {
+    padding: 1.5rem;
+    display: grid;
+    grid-template-columns: repeat(4, 1fr);
+    /* 4 main columns */
+    gap: 1rem;
+    background: #fffdf5;
+    /* Light warm bg like in example */
+}
+
+/* Alternating background if needed, but styling seems flat beige */
+.offer-row-body {
+    background-color: #fff;
+    /* default white */
+}
+
+.offer-row:nth-child(even) .offer-row-body {
+    background-color: #fffbf0;
+    /* light beige for alternate */
+}
+
+
+.offer-col {
+    display: flex;
+    flex-direction: column;
+    /* align-items: center; Center usually, but text-left in example? Let's try left align for strict table look */
+    align-items: flex-start;
+}
+
+.col-label {
+    font-size: 0.75rem;
+    color: #64748b;
+    margin-bottom: 0.25rem;
+}
+
+.col-value-group {
+    display: flex;
+    align-items: center;
+    gap: 0.25rem;
+}
+
+.col-value-primary {
+    font-size: 1.1rem;
+    font-weight: 700;
+    color: #1e293b;
+}
+
+.col-value-big {
+    font-size: 1.6rem;
+    font-weight: 500;
+    color: #1e293b;
+    font-family: inherit;
+}
+
+.col-value-medium {
+    font-size: 1.25rem;
+    font-weight: 500;
+    color: #1e293b;
+}
+
+.info-icon {
+    color: #3b82f6;
+    cursor: pointer;
+}
+
+.col-subtext {
+    font-size: 0.75rem;
+    color: #64748b;
+    line-height: 1.2;
+    margin-top: 0.25rem;
+}
+
+.col-subtext .font-bold {
+    font-weight: 700;
+    color: #334155;
+}
+
+/* Footer */
+.offer-row-footer {
+    background: white;
+    padding: 0.5rem;
+    text-align: center;
+    border-top: 1px solid #f1f5f9;
+}
+
+.details-link {
+    font-size: 0.8rem;
+    color: #3b82f6;
+    cursor: pointer;
+    font-weight: 500;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    gap: 0.25rem;
+}
+
+.chevrons {
+    font-size: 1rem;
+    line-height: 1;
+    margin-top: -2px;
+}
+
+@media (max-width: 768px) {
+    .offer-row-body {
+        grid-template-columns: 1fr 1fr;
+        /* 2 cols on mobile */
+        gap: 1.5rem;
+    }
+
+    .offer-col {
+        align-items: flex-start;
+    }
+
+    .toggle-col-mobile {
+        grid-column: 1 / -1;
+        display: flex;
+        justify-content: center;
+        align-items: center;
+        margin-top: 1rem;
+    }
+}

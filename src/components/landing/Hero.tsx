@@ -41,8 +41,8 @@ export const Hero: React.FC = () => {
                         </div>
 
                         <h1 className="hero__title">
-                            Twój zaufany ekspert
-                            <span className="gradient-text"> finansowy</span>
+                            Tomasz Blachliński
+                            <span className="gradient-text"> - ekspert od kredytów hipotecznych</span>
                         </h1>
 
                         <p className="hero__description">
@@ -79,8 +79,11 @@ export const Hero: React.FC = () => {
                         <div className="hero__image-container">
                             <img
                                 src={tomaszPhoto}
-                                alt="Tomasz Blachliński - Ekspert Finansowy"
+                                alt="Tomasz Blachliński - Ekspert Finansowy i Kredytowy z wieloletnim doświadczeniem"
                                 className="hero__image"
+                                loading="eager"
+                                width="600"
+                                height="600"
                             />
                         </div>
 
